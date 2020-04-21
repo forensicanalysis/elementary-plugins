@@ -1,0 +1,38 @@
+name: CI
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+
+  docker:
+    name: Docker Plugin Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/setup-python@v1
+        with: {python-version: '3.8'}
+      - run: pip install pylint pytest pytest-cov
+      - name: Checkout code
+        uses: actions/checkout@v1
+      - run: pip install -r requirements.txt
+      - name: Python Lint
+        run: pylint * --rcfile test/.pylintrc
+        shell: bash
+        continue-on-error: true
+      - name: Download testdata
+        run: bash test/download_testdata.sh
+        shell: bash
+      - name: Python Test
+        run: pytest -v --cov-config .coveragerc --cov-report=xml --cov=. .
+        shell: bash
+      - name: Upload coverage
+        env:
+          CI: "true"
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: bash <(curl -s https://codecov.io/bash) -f coverage.xml
+        # if: matrix.os == 'windows-latest'
+        shell: bash
