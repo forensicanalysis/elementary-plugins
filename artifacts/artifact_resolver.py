@@ -29,7 +29,7 @@ from definitions import PartitionInfo
 from dfvfs.path.path_spec import PathSpec
 from dfwinreg.interface import WinRegistryKey
 from forensicstore import ForensicStore
-from misc_utils import get_file_infos, CasePreservingSet
+from misc_utils import get_file_infos, CaseFoldSet
 from os_base import OperatingSystemBase
 from os_unknown import UnknownOS
 
@@ -288,14 +288,16 @@ class ArtifactResolver:
                 return []
 
         variable_regex = '(%?%([a-zA-Z0-9_.-]+)%?%)'
-        real_results = CasePreservingSet()  # we do not want the same path in different case
+        real_results = CaseFoldSet()  # we do not want the same path in different case
         for result in results:
             more_vars = re.search(variable_regex, result)
             if result.startswith('C:\\'):
                 LOGGER.debug("Fixing absolute path %s", result)
                 result = result.replace('C:\\', '/').replace('\\', '/')
             if more_vars:
-                real_results.update(self._expand_path(result))
+                paths = self._expand_path(result)
+                for path in paths:
+                    real_results.add(path)
             else:
                 real_results.add(result)
         self.knowledge_cache[key] = real_results
