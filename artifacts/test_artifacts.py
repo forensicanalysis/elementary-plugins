@@ -47,7 +47,7 @@ def test_docker(data):
 
     # build image
     image_tag = "test_artifacts"
-    image, _ = client.images.build(path="config/docker/artifacts/", tag=image_tag)
+    image, _ = client.images.build(path="artifacts/", tag=image_tag)
 
     # run image
     store_path = os.path.abspath(os.path.join(data, "example.forensicstore"))
