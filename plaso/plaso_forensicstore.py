@@ -69,7 +69,7 @@ class ForensicstoreOutputModule(interface.OutputModule):
             pass
 
         event_json_dict = self._JSON_SERIALIZER.WriteSerializedDict(event)
-        event_json_dict['__container_type__'] = 'event'
+        event_json_dict['__container_type__'] = 'plaso'
 
         event_json_dict.update(event_data_json_dict)
 
