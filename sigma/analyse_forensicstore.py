@@ -215,7 +215,7 @@ if __name__ == '__main__':
         logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
     analysis = ForensicstoreSigma("/store", "eventlog", "/app/config.yaml")
-    statistics = analysis.analyseStore("/sigma-0.16.0/rules")
+    statistics = analysis.analyseStore("/app/rules")
 
     # sum = 0
     # lis = sorted(statistics.errors.values(),

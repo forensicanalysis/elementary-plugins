@@ -8,6 +8,8 @@ ADD https://github.com/Neo23x0/sigma/archive/0.16.0.zip /sigma
 RUN unzip /sigma
 
 ADD . /app/
+RUN mv /sigma-0.16.0/rules/* /app/rules
+
 RUN chmod +x /app/analyse_forensicstore.py
 
 WORKDIR /store
