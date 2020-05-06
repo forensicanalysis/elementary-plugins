@@ -1,4 +1,3 @@
-docker
 forensicstore==0.12.2
 sigmatools==0.16.0
 pyyaml==5.3.1

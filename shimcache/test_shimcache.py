@@ -23,8 +23,7 @@ import tempfile
 import forensicstore
 import pytest
 
-sys.path.append("config/scripts")
-shimcache = importlib.import_module("forensicstore-shimcache")
+import shimcache
 
 
 @pytest.fixture

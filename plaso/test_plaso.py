@@ -36,7 +36,7 @@ def test_docker(data):
 
     # build image
     image_tag = "test_docker"
-    image, _ = client.images.build(path="config/docker/plaso/", tag=image_tag)
+    image, _ = client.images.build(path="plaso/", tag=image_tag)
 
     # run image
     store_path = os.path.abspath(os.path.join(data, "example1.forensicstore"))
