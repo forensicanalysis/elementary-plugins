@@ -13,7 +13,7 @@ from sigma.configuration import SigmaConfiguration
 from sigma.parser.exceptions import SigmaParseError
 from sigma.parser.collection import SigmaCollectionParser
 
-from SQL import SQLBackend
+from SQLite import SQLiteBackend
 
 class bcolors:
     HEADER = '\033[95m'
@@ -60,14 +60,14 @@ class Statistics:
         self.errors[val].add(file)
 
 
-class SQLBackend_Quotes(SQLBackend):
+class SQLBackend_Quotes(SQLiteBackend):
 
     """
     Overriding method of SQLBackend to ensure quotes around the filedname
     """
 
-    def __init__(self, sigmaconfig, table, virtualTable=None):
-        super().__init__(sigmaconfig, table, virtualTable)
+    def __init__(self, sigmaconfig, table):
+        super().__init__(sigmaconfig, table)
 
     def fieldNameMapping(self, fieldname, value):
         return "`" + fieldname + "`"
@@ -78,10 +78,9 @@ class ForensicstoreSigma():
     def __init__(self, pathForensicstore, nameTable, pathSigmaConfig):
 
         self.table = nameTable
-        self.virtualTable = "fts"
 
         if os.path.exists(pathForensicstore):
-            self.store = forensicstore.connect(pathForensicstore)
+            self.store = forensicstore.ForensicStore(pathForensicstore, False)
         else:
             raise IOError("Forensicstore not found " + pathForensicstore)
 
@@ -90,33 +89,33 @@ class ForensicstoreSigma():
         else:
             self.config = None
 
-        if self.createVirtualTable():
-            self.SQL = SQLBackend_Quotes(
-                self.config, self.table, virtualTable=self.virtualTable)
-        else:
-            self.SQL = SQLBackend_Quotes(self.config, self.table)
+        self.SQL = SQLBackend_Quotes(self.config, self.table)
 
     def __del__(self):
         try:
-            list(self.store.query("drop table {}".format(self.virtualTable)))
+            self.store.close()
         except Exception as e:
-            print("Could not delete virtual table in database: {}".format(e))
-        self.store.close()
+            pass
+        
 
-    def createVirtualTable(self):
-        # Creating a virtual table in order to enable full text search
-        column_names = self.store.query(
-            "SELECT name FROM PRAGMA_TABLE_INFO('" + self.table + "');")
-        column_names = ["`"+e["name"]+"`" for e in column_names]
-        try:
-            list(self.store.query("CREATE VIRTUAL TABLE IF NOT EXISTS {} USING fts5({}, tokenize=\"unicode61 tokenchars '{}'\");".format(
-                self.virtualTable, ",".join(column_names), "/.")))
-            list(self.store.query(
-                "INSERT INTO {} SELECT * FROM {}".format(self.virtualTable, self.table)))
-        except Exception as e:
-            print("Could not create virtual table in database: {}".format(e))
-            return False
-        return True
+    # def createVirtualTable(self):
+    #     # Creating a virtual table in order to enable full text search
+    #     try:
+    #         cur = self.store.connection.cursor()
+
+    #         column_names = cur.execute("SELECT name FROM PRAGMA_TABLE_INFO('" + self.table + "');")
+    #         column_names = ["`"+e["name"]+"`" for e in column_names]
+
+    #         list(cur.execute("CREATE VIRTUAL TABLE IF NOT EXISTS {} USING fts5({}, tokenize=\"unicode61 tokenchars '{}'\");".format(
+    #             self.virtualTable, ",".join(column_names), "/.")))
+    #         list(cur.execute(
+    #             "INSERT INTO {} SELECT * FROM {}".format(self.virtualTable, self.table)))
+    #         cur.commit()
+    #         cur.close()
+    #     except Exception as e:
+    #         print("Could not create virtual table in database: {}".format(e))
+    #         return False
+    #     return True
 
     def generateSqlQuery(self, sigma_io):
 
@@ -176,6 +175,10 @@ class ForensicstoreSigma():
                     error("Error in %s: %s", sigmafile, e)
                     statistics.error_add(e, sigmafile)
 
+                except ValueError as e:
+                    error("Error in %s: %s", sigmafile, e)
+                    statistics.error_add(e, sigmafile)
+
                 except OperationalError as e:
                     statistics.missingFieldNames.add(str(e).split(": ")[1])
                     statistics.error_add(e, sigmafile)
@@ -186,7 +189,7 @@ class ForensicstoreSigma():
                     statistics.error_add(e, sigmafile)
 
                 except Exception as e:
-                    error("Unexpected Exeption: " + str(e))
+                    error("Unexpected Exeption in {}: {} ({})".format(str(sigmafile), str(e), type(e)))
                     exit(0)
 
         return statistics
@@ -214,8 +217,8 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
-    analysis = ForensicstoreSigma("/store", "eventlog", "/app/config.yaml")
-    statistics = analysis.analyseStore("/sigma-0.16.0/rules")
+    analysis = ForensicstoreSigma("sigma/eventlog.forensicstore/item.db", "eventlog", "sigma/config.yaml")
+    statistics = analysis.analyseStore("sigma/sigma/rules")
 
     # sum = 0
     # lis = sorted(statistics.errors.values(),

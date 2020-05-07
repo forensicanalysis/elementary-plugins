@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 
-from analyse_forensicstore import SQLBackend_Quotes
+from SQL import SQLBackend
 
 from sigma.parser.collection import SigmaCollectionParser
 from sigma.config.mapping import FieldMapping
@@ -12,66 +12,65 @@ class TestGenerateQuery(unittest.TestCase):
     def setUp(self):
         self.basic_rule = {"title": "Test", "level": "testing"}
         self.table = "eventlog"
-        self.virtual_table = "fts"
 
     def test_regular_queries(self):
         # Test regular queries
         detection = {"selection": {"fieldname": "test1"},
                      "condition": "selection"}
-        expected_result = 'select * from {} where `fieldname` = "test1"'.format(
+        expected_result = 'select * from {} where fieldname = "test1"'.format(
             self.table)
         self.validate(detection, expected_result)
 
         detection = {"selection": {"fieldname": 4}, "condition": "selection"}
-        expected_result = 'select * from {} where `fieldname` = "4"'.format(
+        expected_result = 'select * from {} where fieldname = "4"'.format(
             self.table)
         self.validate(detection, expected_result)
 
         detection = {"selection": {"fieldname": [
             "test1", "test2"]}, "condition": "selection"}
-        expected_result = 'select * from {} where `fieldname` in ("test1", "test2")'.format(
+        expected_result = 'select * from {} where fieldname in ("test1", "test2")'.format(
             self.table)
         self.validate(detection, expected_result)
 
         detection = {"selection": {
             "fieldname": [3, 4]}, "condition": "selection"}
-        expected_result = 'select * from {} where `fieldname` in ("3", "4")'.format(
+        expected_result = 'select * from {} where fieldname in ("3", "4")'.format(
             self.table)
         self.validate(detection, expected_result)
 
         detection = {"selection": {"fieldname1": "test1", "fieldname2": [
             "test2", "test3"]}, "condition": "selection"}
-        expected_result = 'select * from {} where (`fieldname1` = "test1" and `fieldname2` in ("test2", "test3"))'.format(
+        expected_result = 'select * from {} where (fieldname1 = "test1" and fieldname2 in ("test2", "test3"))'.format(
             self.table)
         self.validate(detection, expected_result)
 
         detection = {"selection": {"fieldname": "test1"}, "filter": {
             "fieldname2": "whatever"}, "condition": "selection and filter"}
-        expected_result = 'select * from {} where (`fieldname` = "test1" and `fieldname2` = "whatever")'.format(
+        expected_result = 'select * from {} where (fieldname = "test1" and fieldname2 = "whatever")'.format(
             self.table)
         self.validate(detection, expected_result)
 
         detection = {"selection": {"fieldname": "test1"}, "filter": {
             "fieldname2": "whatever"}, "condition": "selection or filter"}
-        expected_result = 'select * from {} where (`fieldname` = "test1" or `fieldname2` = "whatever")'.format(
+        expected_result = 'select * from {} where (fieldname = "test1" or fieldname2 = "whatever")'.format(
             self.table)
         self.validate(detection, expected_result)
 
         detection = {"selection": {"fieldname": "test1"}, "filter": {
             "fieldname2": "whatever"}, "condition": "selection and not filter"}
-        expected_result = 'select * from {} where (`fieldname` = "test1" and not (`fieldname2` = "whatever"))'.format(
+        expected_result = 'select * from {} where (fieldname = "test1" and not (fieldname2 = "whatever"))'.format(
             self.table)
         self.validate(detection, expected_result)
 
         detection = {"selection": {"fieldname1": "test1"}, "filter": {
             "fieldname2": "test2"}, "condition": "1 of them"}
-        expected_result = 'select * from {} where (`fieldname1` = "test1" or `fieldname2` = "test2")'.format(
+        expected_result = 'select * from {} where (fieldname1 = "test1" or fieldname2 = "test2")'.format(
             self.table)
         self.validate(detection, expected_result)
 
         detection = {"selection": {"fieldname1": "test1"}, "filter": {
             "fieldname2": "test2"}, "condition": "all of them"}
-        expected_result = 'select * from {} where (`fieldname1` = "test1" and `fieldname2` = "test2")'.format(
+        expected_result = 'select * from {} where (fieldname1 = "test1" and fieldname2 = "test2")'.format(
             self.table)
         self.validate(detection, expected_result)
 
@@ -80,63 +79,29 @@ class TestGenerateQuery(unittest.TestCase):
         # contains
         detection = {"selection": {"fieldname|contains": "test"},
                      "condition": "selection"}
-        expected_result = 'select * from {} where `fieldname` like "%test%" escape \'\\\''.format(
+        expected_result = 'select * from {} where fieldname like "%test%" escape \'\\\''.format(
             self.table)
         self.validate(detection, expected_result)
 
         # all
         detection = {"selection": {"fieldname|all": [
             "test1", "test2"]}, "condition": "selection"}
-        expected_result = 'select * from {} where (`fieldname` = "test1" and `fieldname` = "test2")'.format(
+        expected_result = 'select * from {} where (fieldname = "test1" and fieldname = "test2")'.format(
             self.table)
         self.validate(detection, expected_result)
 
         # endswith
         detection = {"selection": {"fieldname|endswith": "test"},
                      "condition": "selection"}
-        expected_result = 'select * from {} where `fieldname` like "%test" escape \'\\\''.format(
+        expected_result = 'select * from {} where fieldname like "%test" escape \'\\\''.format(
             self.table)
         self.validate(detection, expected_result)
 
         # startswith
         detection = {"selection": {"fieldname|startswith": "test"},
                      "condition": "selection"}
-        expected_result = 'select * from {} where `fieldname` like "test%" escape \'\\\''.format(
+        expected_result = 'select * from {} where fieldname like "test%" escape \'\\\''.format(
             self.table)
-        self.validate(detection, expected_result)
-
-    def test_full_text_search(self):
-
-        detection = {"selection": ["test1"], "condition": "selection"}
-        expected_result = 'select * from {} where fts match (\'"test1"\')'.format(
-            self.virtual_table)
-        self.validate(detection, expected_result)
-
-        detection = {"selection": [5], "condition": "selection"}
-        expected_result = 'select * from {} where fts match (\'"5"\')'.format(
-            self.virtual_table)
-        self.validate(detection, expected_result)
-
-        detection = {"selection": ["test1", "test2"], "condition": "selection"}
-        expected_result = 'select * from {} where fts match (\'"test1" OR "test2"\')'.format(
-            self.virtual_table)
-        self.validate(detection, expected_result)
-
-        detection = {"selection": [5, 6], "condition": "selection"}
-        expected_result = 'select * from {} where fts match (\'"5" OR "6"\')'.format(
-            self.virtual_table)
-        self.validate(detection, expected_result)
-
-        detection = {"selection": ["test1"], "filter": [
-            "test2"], "condition": "selection or filter"}
-        expected_result = 'select * from {} where fts match (\'"test1" OR "test2"\')'.format(
-            self.virtual_table)
-        self.validate(detection, expected_result)
-
-        detection = {"selection": ["test1"], "filter": [
-            "test2"], "condition": "selection and filter"}
-        expected_result = 'select * from {} where fts match (\'"test1" and "test2"\')'.format(
-            self.virtual_table)
         self.validate(detection, expected_result)
 
     def test_aggregations(self):
@@ -144,7 +109,7 @@ class TestGenerateQuery(unittest.TestCase):
         # count
         detection = {"selection": {"fieldname": "test"},
                      "condition": "selection | count() > 5"}
-        inner_query = 'select count(*) as agg from {} where `fieldname` = "test"'.format(
+        inner_query = 'select count(*) as agg from {} where fieldname = "test"'.format(
             self.table)
         expected_result = 'select * from ({}) where agg > 5'.format(inner_query)
         self.validate(detection, expected_result)
@@ -152,7 +117,7 @@ class TestGenerateQuery(unittest.TestCase):
         # min
         detection = {"selection": {"fieldname1": "test"},
                      "condition": "selection | min(fieldname2) > 5"}
-        inner_query = 'select min(`fieldname2`) as agg from {} where `fieldname1` = "test"'.format(
+        inner_query = 'select min(fieldname2) as agg from {} where fieldname1 = "test"'.format(
             self.table)
         expected_result = 'select * from ({}) where agg > 5'.format(inner_query)
         self.validate(detection, expected_result)
@@ -160,7 +125,7 @@ class TestGenerateQuery(unittest.TestCase):
         # max
         detection = {"selection": {"fieldname1": "test"},
                      "condition": "selection | max(fieldname2) > 5"}
-        inner_query = 'select max(`fieldname2`) as agg from {} where `fieldname1` = "test"'.format(
+        inner_query = 'select max(fieldname2) as agg from {} where fieldname1 = "test"'.format(
             self.table)
         expected_result = 'select * from ({}) where agg > 5'.format(inner_query)
         self.validate(detection, expected_result)
@@ -168,7 +133,7 @@ class TestGenerateQuery(unittest.TestCase):
         # avg
         detection = {"selection": {"fieldname1": "test"},
                      "condition": "selection | avg(fieldname2) > 5"}
-        inner_query = 'select avg(`fieldname2`) as agg from {} where `fieldname1` = "test"'.format(
+        inner_query = 'select avg(fieldname2) as agg from {} where fieldname1 = "test"'.format(
             self.table)
         expected_result = 'select * from ({}) where agg > 5'.format(inner_query)
         self.validate(detection, expected_result)
@@ -176,7 +141,7 @@ class TestGenerateQuery(unittest.TestCase):
         # sum
         detection = {"selection": {"fieldname1": "test"},
                      "condition": "selection | sum(fieldname2) > 5"}
-        inner_query = 'select sum(`fieldname2`) as agg from {} where `fieldname1` = "test"'.format(
+        inner_query = 'select sum(fieldname2) as agg from {} where fieldname1 = "test"'.format(
             self.table)
         expected_result = 'select * from ({}) where agg > 5'.format(inner_query)
         self.validate(detection, expected_result)
@@ -184,7 +149,7 @@ class TestGenerateQuery(unittest.TestCase):
         # <
         detection = {"selection": {"fieldname1": "test"},
                      "condition": "selection | sum(fieldname2) < 5"}
-        inner_query = 'select sum(`fieldname2`) as agg from {} where `fieldname1` = "test"'.format(
+        inner_query = 'select sum(fieldname2) as agg from {} where fieldname1 = "test"'.format(
             self.table)
         expected_result = 'select * from ({}) where agg < 5'.format(inner_query)
         self.validate(detection, expected_result)
@@ -192,7 +157,7 @@ class TestGenerateQuery(unittest.TestCase):
         # ==
         detection = {"selection": {"fieldname1": "test"},
                      "condition": "selection | sum(fieldname2) == 5"}
-        inner_query = 'select sum(`fieldname2`) as agg from {} where `fieldname1` = "test"'.format(
+        inner_query = 'select sum(fieldname2) as agg from {} where fieldname1 = "test"'.format(
             self.table)
         expected_result = 'select * from ({}) where agg == 5'.format(inner_query)
         self.validate(detection, expected_result)
@@ -200,7 +165,7 @@ class TestGenerateQuery(unittest.TestCase):
         # group by
         detection = {"selection": {"fieldname1": "test"},
                      "condition": "selection | sum(fieldname2) by fieldname3 == 5"}
-        inner_query = 'select sum(`fieldname2`) as agg from {} where `fieldname1` = "test" group by `fieldname3`'.format(
+        inner_query = 'select sum(fieldname2) as agg from {} where fieldname1 = "test" group by fieldname3'.format(
             self.table)
         expected_result = 'select * from ({}) where agg == 5'.format(inner_query)
         self.validate(detection, expected_result)
@@ -208,32 +173,9 @@ class TestGenerateQuery(unittest.TestCase):
         # multiple conditions
         detection = {"selection": {"fieldname1": "test"}, "filter": {
             "fieldname2": "tessst"}, "condition": "selection or filter | sum(fieldname2) == 5"}
-        inner_query = 'select sum(`fieldname2`) as agg from {} where (`fieldname1` = "test" or `fieldname2` = "tessst")'.format(
+        inner_query = 'select sum(fieldname2) as agg from {} where (fieldname1 = "test" or fieldname2 = "tessst")'.format(
             self.table)
         expected_result = 'select * from ({}) where agg == 5'.format(inner_query)
-        self.validate(detection, expected_result)
-
-        # aggregation with fts
-        detection = {"selection": ["test"],
-                     "condition": "selection | count() > 5"}
-        inner_query = 'select count(*) as agg from {0} where {0} match (\'"test"\')'.format(
-            self.virtual_table)
-        expected_result = 'select * from ({}) where agg > 5'.format(inner_query)
-        self.validate(detection, expected_result)
-
-        detection = {"selection": ["test1", "test2"],
-                     "condition": "selection | count() > 5"}
-        inner_query = 'select count(*) as agg from {0} where {0} match (\'"test1" or "test2"\')'.format(
-            self.virtual_table)
-        expected_result = 'select * from ({}) where agg > 5'.format(inner_query)
-        self.validate(detection, expected_result)
-
-        # aggregation + group by + fts
-        detection = {"selection": ["test1", "test2"],
-                     "condition": "selection | count() by fieldname > 5"}
-        inner_query = 'select count(*) as agg from {0} where {0} match (\'"test1" or "test2"\') group by `fieldname`'.format(
-            self.virtual_table)
-        expected_result = 'select * from ({}) where agg > 5'.format(inner_query)
         self.validate(detection, expected_result)
 
     def test_wildcards(self):
@@ -241,73 +183,73 @@ class TestGenerateQuery(unittest.TestCase):
         # wildcard: *
         detection = {"selection": {"fieldname": "test*"},
                      "condition": "selection"}
-        expected_result = 'select * from {} where `fieldname` like '.format(
+        expected_result = 'select * from {} where fieldname like '.format(
             self.table) + r'"test%"' + r" escape '\'"
         self.validate(detection, expected_result)
 
         # wildcard: ?
         detection = {"selection": {"fieldname": "test?"},
                      "condition": "selection"}
-        expected_result = 'select * from {} where `fieldname` like '.format(
+        expected_result = 'select * from {} where fieldname like '.format(
             self.table) + r'"test_"' + r" escape '\'"
         self.validate(detection, expected_result)
 
         # escaping:
         detection = {"selection": {"fieldname": r"test\?"},
                      "condition": "selection"}
-        expected_result = 'select * from {} where `fieldname` like '.format(
+        expected_result = 'select * from {} where fieldname like '.format(
             self.table) + r'"test\?"' + r" escape '\'"
         self.validate(detection, expected_result)
 
         detection = {"selection": {"fieldname": r"test\\*"},
                      "condition": "selection"}
-        expected_result = 'select * from {} where `fieldname` like '.format(
+        expected_result = 'select * from {} where fieldname like '.format(
             self.table) + r'"test\\%"' + r" escape '\'"
         self.validate(detection, expected_result)
 
         detection = {"selection": {"fieldname": r"test\*"},
                      "condition": "selection"}
-        expected_result = 'select * from {} where `fieldname` like '.format(
+        expected_result = 'select * from {} where fieldname like '.format(
             self.table) + r'"test\*"' + r" escape '\'"
         self.validate(detection, expected_result)
 
         detection = {"selection": {"fieldname": r"test\\"},
                      "condition": "selection"}
-        expected_result = 'select * from {} where `fieldname` like '.format(
+        expected_result = 'select * from {} where fieldname like '.format(
             self.table) + r'"test\\"' + r" escape '\'"
         self.validate(detection, expected_result)
 
         detection = {"selection": {"fieldname": r"test\abc"},
                      "condition": "selection"}
-        expected_result = 'select * from {} where `fieldname` = '.format(
-            self.table) + r'"test\abc"'
+        expected_result = 'select * from {} where fieldname like '.format(
+            self.table) + r'"test\\abc"' + r" escape '\'"
         self.validate(detection, expected_result)
 
         detection = {"selection": {"fieldname": r"test%"},
                      "condition": "selection"}
-        expected_result = 'select * from {} where `fieldname` like '.format(
+        expected_result = 'select * from {} where fieldname like '.format(
             self.table) + r'"test\%"' + r" escape '\'"
         self.validate(detection, expected_result)
 
         detection = {"selection": {"fieldname": r"test_"},
                      "condition": "selection"}
-        expected_result = 'select * from {} where `fieldname` like '.format(
+        expected_result = 'select * from {} where fieldname like '.format(
             self.table) + r'"test\_"' + r" escape '\'"
         self.validate(detection, expected_result)
 
         # multiple options
         detection = {"selection": {"fieldname": [
             "test*", "*test"]}, "condition": "selection"}
-        opt1 = '`fieldname` like ' + r'"test%"' + r" escape '\'"
-        opt2 = '`fieldname` like ' + r'"%test"' + r" escape '\'"
+        opt1 = 'fieldname like ' + r'"test%"' + r" escape '\'"
+        opt2 = 'fieldname like ' + r'"%test"' + r" escape '\'"
         expected_result = 'select * from {} where ({} or {})'.format(
             self.table, opt1, opt2)
         self.validate(detection, expected_result)
 
         detection = {"selection": {"fieldname|all": [
             "test*", "*test"]}, "condition": "selection"}
-        opt1 = '`fieldname` like ' + r'"test%"' + r" escape '\'"
-        opt2 = '`fieldname` like ' + r'"%test"' + r" escape '\'"
+        opt1 = 'fieldname like ' + r'"test%"' + r" escape '\'"
+        opt2 = 'fieldname like ' + r'"%test"' + r" escape '\'"
         expected_result = 'select * from {} where ({} and {})'.format(
             self.table, opt1, opt2)
         self.validate(detection, expected_result)
@@ -315,7 +257,7 @@ class TestGenerateQuery(unittest.TestCase):
     def test_fieldname_mapping(self):
         detection = {"selection": {"fieldname": "test1"},
                      "condition": "selection"}
-        expected_result = 'select * from {} where `mapped_fieldname` = "test1"'.format(
+        expected_result = 'select * from {} where mapped_fieldname = "test1"'.format(
             self.table)
 
         # configure mapping
@@ -327,7 +269,7 @@ class TestGenerateQuery(unittest.TestCase):
 
         with patch("yaml.safe_load_all", return_value=[self.basic_rule]):
             parser = SigmaCollectionParser("any sigma io", config, None)
-            backend = SQLBackend_Quotes(config, self.table, self.virtual_table)
+            backend = SQLBackend(config, self.table)
 
             assert len(parser.parsers) == 1
 
@@ -342,31 +284,17 @@ class TestGenerateQuery(unittest.TestCase):
         expected_result = NotImplementedError()
         self.validate(detection, expected_result)
 
-        # fts is not implemented for nested condtions
-        detection = {"selection": ["test"], "filter": [
-            "test2"], "condition": "selection and filter"}  # this is ok
-        detection = {"selection": ["test"], "filter": [
-            "test2"], "condition": "selection or filter"}  # this is ok
-        detection = {"selection": ["test"], "filter": [
-            "test2"], "condition": "selection and not filter"}  # this is already nested
-        expected_result = NotImplementedError()
-        self.validate(detection, expected_result)
-
-        detection = {"selection": ["test"], "filter": [
-            "test2"], "condition": "selection and filter and filter"}  # this is nested
-        expected_result = NotImplementedError()
-        self.validate(detection, expected_result)
-
-        detection = {"selection": ["test"], "filter": [
-            "test2"], "condition": "selection and filter or filter"}  # this is nested
-        expected_result = NotImplementedError()
-        self.validate(detection, expected_result)
-
         # re modifier is not implemented
         detection = {"selection": {"fieldname|re": "test"},
                      "condition": "selection"}
         expected_result = NotImplementedError()
         self.validate(detection, expected_result)
+
+        #Full Text Search is not implemented
+        detection = {"selection": ["test1"], "condition": "selection"}
+        expected_result = NotImplementedError()
+        self.validate(detection, expected_result)
+
 
     def validate(self, detection, expectation):
 
@@ -376,7 +304,7 @@ class TestGenerateQuery(unittest.TestCase):
 
         with patch("yaml.safe_load_all", return_value=[self.basic_rule]):
             parser = SigmaCollectionParser("any sigma io", config, None)
-            backend = SQLBackend_Quotes(config, self.table, self.virtual_table)
+            backend = SQLBackend(config, self.table)
 
             assert len(parser.parsers) == 1
 

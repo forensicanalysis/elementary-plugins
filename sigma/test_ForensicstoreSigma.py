@@ -99,9 +99,8 @@ class TestGenerateSqlQuery(unittest.TestCase):
     def test_empty_io_stream(self):
         self.analysis.config = SigmaConfiguration()
         self.analysis.table = "tablename"
-        self.analysis.virtualTable = "fts"
         self.analysis.SQL = SQLBackend_Quotes(
-            self.analysis.config, self.analysis.table, self.analysis.virtualTable)
+            self.analysis.config, self.analysis.table)
 
         with patch("builtins.open", mock_open(read_data="")):
             assert self.analysis.generateSqlQuery(open("empty file")) == []
@@ -109,9 +108,8 @@ class TestGenerateSqlQuery(unittest.TestCase):
     def test_invalid_io_stream(self):
         self.analysis.config = SigmaConfiguration()
         self.analysis.table = "tablename"
-        self.analysis.virtualTable = "fts"
         self.analysis.SQL = SQLBackend_Quotes(
-            self.analysis.config, self.analysis.table, self.analysis.virtualTable)
+            self.analysis.config, self.analysis.table)
 
         with patch("builtins.open", mock_open(read_data="not valid\n\nwhatever")):
             self.assertRaises(
@@ -127,9 +125,8 @@ class TestGenerateSqlQuery(unittest.TestCase):
         # Setting attributes for testing
         self.analysis.config = SigmaConfiguration()
         self.analysis.table = "tablename"
-        self.analysis.virtualTable = "fts"
         self.analysis.SQL = SQLBackend_Quotes(
-            self.analysis.config, self.analysis.table, self.analysis.virtualTable)
+            self.analysis.config, self.analysis.table)
 
         sigma_rule = {"title": "Test", "level": "testing", "detection": {
             "keywords": ["test1", "test2"], "condition": "keywords"}}

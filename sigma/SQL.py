@@ -17,7 +17,7 @@
 import re
 import sigma
 from sigma.backends.base import SingleTextQueryBackend
-from sigma.parser.condition import SigmaAggregationParser,NodeSubexpression, ConditionAND, ConditionOR, ConditionNOT
+from sigma.parser.condition import SigmaAggregationParser, NodeSubexpression, ConditionAND, ConditionOR, ConditionNOT
 from sigma.parser.exceptions import SigmaParseError
 
 class SQLBackend(SingleTextQueryBackend):
@@ -42,10 +42,9 @@ class SQLBackend(SingleTextQueryBackend):
     mapListValueExpression = "%s OR %s"     # Syntax for field/value condititons where map value is a list
     mapLength = "(%s %s)"
 
-    def __init__(self, sigmaconfig, table, virtualTable):
+    def __init__(self, sigmaconfig, table):
         super().__init__(sigmaconfig)
         self.table = table
-        self.virtualTable = virtualTable
 
     def generateANDNode(self, node):
         generated = [ self.generateNode(val) for val in node ]
@@ -85,29 +84,32 @@ class SQLBackend(SingleTextQueryBackend):
     def generateMapItemNode(self, node):
         fieldname, value = node
         transformed_fieldname = self.fieldNameMapping(fieldname, value)
-        if "," in self.generateNode(value) and not re.search(r"((\\(\*|\?|\\))|\*|\?|_|%)", self.generateNode(value)):
+
+        has_wildcard = re.search(r"((\\(\*|\?|\\))|\*|\?|_|%)", self.generateNode(value))
+
+        if "," in self.generateNode(value) and not has_wildcard:        
             return self.mapMulti % (transformed_fieldname, self.generateNode(value))
         elif "LENGTH" in transformed_fieldname:
             return self.mapLength % (transformed_fieldname, value)
         elif type(value) == list:
             return self.generateMapItemListNode(transformed_fieldname, value)
-        elif self.mapListsSpecialHandling == False and type(value) in (str, int, list) or self.mapListsSpecialHandling == True and type(value) in (str, int):
-            if re.search(r"((\\(\*|\?|\\))|\*|\?|_|%)", self.generateNode(value)):
-               return self.mapWildcard % (transformed_fieldname, self.generateNode(self.parseWildcard(value)))
+        elif self.mapListsSpecialHandling == False and type(value) in (str, int, list) or self.mapListsSpecialHandling == True and type(value) in (str, int):          
+            if has_wildcard:
+                return self.mapWildcard % (transformed_fieldname, self.generateNode(value))
             else:
-               return self.mapExpression % (transformed_fieldname, self.generateNode(value))
+                return self.mapExpression % (transformed_fieldname, self.generateNode(value))
         elif "sourcetype" in transformed_fieldname:
             return self.mapSource % (transformed_fieldname, self.generateNode(value))
-        elif "*" in str(value):
-            return self.mapWildcard % (transformed_fieldname, self.generateNode(self.parseWildcard(value)))
+        elif has_wildcard:
+            return self.mapWildcard % (transformed_fieldname, self.generateNode(value))
         else:
             raise TypeError("Backend does not support map values of type " + str(type(value)))
 
     def generateMapItemListNode(self, key, value):
-        return "(" + (" OR ".join([self.mapWildcard % (key, self.generateValueNode(self.parseWildcard(item))) for item in value])) + ")"
+        return "(" + (" OR ".join([self.mapWildcard % (key, self.generateValueNode(item)) for item in value])) + ")"
     
     def generateValueNode(self, node):
-        return self.valueExpression % (self.cleanValue(str(node)))
+            return self.valueExpression % (self.cleanValue(str(node)))
 
     def generateNULLValueNode(self, node):
         return self.nullExpression % (node.item)
@@ -124,15 +126,8 @@ class SQLBackend(SingleTextQueryBackend):
         return fieldname
 
     def cleanValue(self, val):
-        if "*" == val:
-            pass
-        elif "*.*.*" in val:
-            val = val.replace("*.*.*", "%")
-        return val
-
-    def parseWildcard(self, val):
         if not isinstance(val, str):
-            return val
+            return str(val)
 
         #Single backlashes which are not in front of * or ? are doulbed
         val = re.sub(r"(?<!\\)\\(?!(\\|\*|\?))", r"\\\\", val)
@@ -149,109 +144,7 @@ class SQLBackend(SingleTextQueryBackend):
         #Replace ? with _, if even number of backsashes (or zero) in front of ?
         val = re.sub(r"(?<!\\)(\\\\)*(?!\\)\?", r"\1_", val)
         return val
-
-    def generate(self, sigmaparser):
-        """Method is called for each sigma rule and receives the parsed rule (SigmaParser)"""
-        for parsed in sigmaparser.condparsed:
-
-            query = self.generateQuery(parsed)
-            before = self.generateBefore(parsed)
-            after = self.generateAfter(parsed)
-
-            result = ""
-            if before is not None:
-                result = before
-            if query is not None:
-                result += query
-            if after is not None:
-                result += after
-
-            return result
-    
-    def evaluateCondition(self, condition):
-        if type(condition) not in  [ConditionAND, ConditionOR, ConditionNOT]:
-            raise NotImplementedError("Error in recursive Search logic")
-
-        results = []
-        for elem in condition.items:
-            if isinstance(elem, NodeSubexpression):
-                results.append(self.recursiveFtsSearch(elem))
-            if isinstance(elem, ConditionNOT):
-                results.append(self.evaluateCondition(elem))
-            if isinstance(elem, tuple):
-                results.append(False)
-            if type(elem) in (str, int, list):
-                return True
-        return any(results)
-
-
-    def recursiveFtsSearch(self, subexpression):
-        #True: found subexpression, where no fieldname is requested -> full text search
-        #False: no subexpression found, where a full text search is needed
-
-        if type(subexpression) in [str, int, list]:
-            return True
-        elif type(subexpression) in [tuple]:
-            return False
-
-        if not isinstance(subexpression, NodeSubexpression):
-            raise NotImplementedError("Error in recursive Search logic")
-
-        if isinstance(subexpression.items, NodeSubexpression):
-            return self.recursiveFtsSearch(subexpression.items)
-        elif type(subexpression.items) in [ConditionAND, ConditionOR, ConditionNOT]:
-            return self.evaluateCondition(subexpression.items)
-            
-
-    def generateQuery(self, parsed):
-        if self.recursiveFtsSearch(parsed.parsedSearch):
-            #Need to handle full text search
-            if isinstance(parsed.parsedSearch, (str,int)):
-                #Searching a string/int
-                return self.generateFullTextQuery(self.generateNode(parsed.parsedSearch), parsed)
-            elif isinstance(parsed.parsedSearch, NodeSubexpression):
-                items = parsed.parsedSearch.items.items
-                if isinstance(items, list):
-                    if items and all(isinstance(s, str) for s in items):
-                        #Searching a list of strings
-                        return self.generateFullTextQuery(self.generateNode(parsed.parsedSearch)[1:-1], parsed)
-                    elif items and all(isinstance(s, int) for s in items):
-                        #Searching a list of integers
-                        return self.generateFullTextQuery(self.generateNode(parsed.parsedSearch)[1:-1], parsed)
-            raise NotImplementedError("FullTextSearch only implemented on first level")
-        else:
-            result = self.generateNode(parsed.parsedSearch)
-
-        if parsed.parsedAgg:
-            #Handle aggregation
-            fro, whe = self.generateAggregation(parsed.parsedAgg, result)
-            return "Select * From {} Where {}".format(fro, whe)
-
-        return "Select * From {} Where {}".format(self.table, result)
-    
-    def generateFullTextQuery(self, search, parsed):
-        if not self.virtualTable:
-            raise NotImplementedError("Full Text search is not enabled")
-                
-        search = search.replace('"', '')
-        search = '" OR "'.join(search.split(" OR "))
-        search = '" AND "'.join(search.split(" AND "))
-        search = '"{}"'.format(search)
-        search = search.replace('%', '')
-        search = search.replace('_', '')
-        search = '{} match (\'{}\')'.format(self.virtualTable, search)
-              
-        if parsed.parsedAgg:
-            #Handle aggregation
-            temp = self.table
-            self.table = self.virtualTable
-            fro, whe = self.generateAggregation(parsed.parsedAgg, search)
-            self.table = temp
-            return "Select * From {} Where {}".format(fro, whe)
-
-        return 'Select * from {} where {}'.format(self.virtualTable, search)
-
-
+ 
     def generateAggregation(self, agg, where_clausel):
         if not agg:
             return self.table, where_clausel
@@ -281,3 +174,49 @@ class SQLBackend(SingleTextQueryBackend):
             return temp_table, agg_condition
         
         raise NotImplementedError("{} aggregation not implemented in SQL Backend".format(agg.aggfunc_notrans))
+
+    def generateQuery(self, parsed):
+        if self._recursiveFtsSearch(parsed.parsedSearch):
+            raise NotImplementedError("FullTextSearch not implemented for SQL Backend")
+        result = self.generateNode(parsed.parsedSearch)
+
+        if parsed.parsedAgg:
+            #Handle aggregation
+            fro, whe = self.generateAggregation(parsed.parsedAgg, result)
+            return "Select * From {} Where {}".format(fro, whe)
+
+        return "Select * From {} Where {}".format(self.table, result)
+
+    def _recursiveFtsSearch(self, subexpression):
+        #True: found subexpression, where no fieldname is requested -> full text search
+        #False: no subexpression found, where a full text search is needed
+
+        def _evaluateCondition(condition):
+            #Helper function to evaulate condtions
+            if type(condition) not in  [ConditionAND, ConditionOR, ConditionNOT]:
+                raise NotImplementedError("Error in recursive Search logic")
+
+            results = []
+            for elem in condition.items:
+                if isinstance(elem, NodeSubexpression):
+                    results.append(self._recursiveFtsSearch(elem))
+                if isinstance(elem, ConditionNOT):
+                    results.append(_evaluateCondition(elem))
+                if isinstance(elem, tuple):
+                    results.append(False)
+                if type(elem) in (str, int, list):
+                    return True
+            return any(results)
+
+        if type(subexpression) in [str, int, list]:
+            return True
+        elif type(subexpression) in [tuple]:
+            return False
+
+        if not isinstance(subexpression, NodeSubexpression):
+            raise NotImplementedError("Error in recursive Search logic")
+
+        if isinstance(subexpression.items, NodeSubexpression):
+            return self._recursiveFtsSearch(subexpression.items)
+        elif type(subexpression.items) in [ConditionAND, ConditionOR, ConditionNOT]:
+            return _evaluateCondition(subexpression.items)
