@@ -95,7 +95,7 @@ def main():
     for item in items:
         results = transform(item)
         for result in results:
-            store.insert(result)
+            # store.insert(result)
             print(json.dumps(result))
     store.close()
 

@@ -25,7 +25,7 @@ from os.path import dirname, realpath, join, isdir
 
 from forensicstore import ForensicStore
 
-logging.getLogger('jsonlite.jsonlite').setLevel(logging.WARNING)
+logging.getLogger('forensicstore').setLevel(logging.WARNING)
 
 TEST_CASE_NAME = 'test_case'
 

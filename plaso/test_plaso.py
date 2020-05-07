@@ -51,7 +51,7 @@ def test_docker(data):
 
     # test results
     store = forensicstore.connect(store_path)
-    items = list(store.select("event"))
+    items = list(store.select("plaso"))
     store.close()
     assert len(items) == 69
 
