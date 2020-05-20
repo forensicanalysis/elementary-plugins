@@ -47,13 +47,13 @@ def test_docker(data):
         store_path_unix = "/" + store_path.lower()[0] + store_path[2:].replace("\\", "/")
     volumes = {store_path_unix: {'bind': '/store', 'mode': 'rw'}}
     # plugin_dir: {'bind': '/plugins', 'mode': 'ro'}
-    output = client.containers.run(image_tag, command=["--filter", "artifact=WindowsDeviceSetup"], volumes=volumes,
+    output = client.containers.run(image_tag, command=["--filter", "artifact=WindowsDeviceSetup", "input.forensicstore"], volumes=volumes,
                                    stderr=True, stdout=True)
     print(output)
 
     # test results
     store = forensicstore.open(os.path.join(store_path, "input.forensicstore"))
-    items = list(store.select("plaso"))
+    items = list(store.select([{"type": "event"}]))
     store.close()
     assert len(items) == 69
 
