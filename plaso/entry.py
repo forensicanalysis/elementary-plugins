@@ -53,10 +53,10 @@ def main():
         LOGGER.warning("requires a filter to be set")
         sys.exit(1)
 
-    store = forensicstore.connect(".")
+    store = forensicstore.open("input.forensicstore")
     files = []
 
-    selected = list(store.select("file", args.filter))
+    selected = list(store.select(args.filter))
     for item in selected:
         if "export_path" in item and os.path.exists(item["export_path"]):
             files.append(item["export_path"])

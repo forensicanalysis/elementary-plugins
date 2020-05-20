@@ -14,35 +14,38 @@
 #
 # Author(s): Jonas Plum
 
-import importlib
 import os
 import shutil
 import sys
 import tempfile
+from io import StringIO
 
-import forensicstore
 import pytest
-
 import shimcache
 
 
 @pytest.fixture
 def data():
     tmpdir = tempfile.mkdtemp()
-    shutil.copytree(os.path.join("test", "data"), os.path.join(tmpdir, "data"))
-    return os.path.join(tmpdir, "data")
+    shutil.copyfile(
+        os.path.join("test", "data", "example1.forensicstore"),
+        os.path.join(tmpdir, "input.forensicstore"))
+    return tmpdir
 
 
 def test_shimcache(data):
     cwd = os.getcwd()
-    os.chdir(os.path.join(data, "example1.forensicstore"))
+    os.chdir(data)
+
+    temp_out = StringIO()
+
+    # Replace default stdout (terminal) with our stream
+    sys.stdout = temp_out
 
     shimcache.main()
 
-    store = forensicstore.connect(os.path.join(data, "example1.forensicstore"))
-    items = list(store.select("shimcache"))
-    store.close()
-    assert len(items) == 391
+    assert temp_out.getvalue().count("\n") == 391 + 1
 
+    sys.stdout = sys.__stdout__
     os.chdir(cwd)
     shutil.rmtree(data)

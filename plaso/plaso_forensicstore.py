@@ -103,7 +103,7 @@ class ForensicstoreOutputModule(interface.OutputModule):
         if not self._filename:
             raise ValueError('Missing filename.')
 
-        self._store = forensicstore.connect(self._filename)
+        self._store = forensicstore.open(self._filename)
 
     def Close(self):
         """Disconnects from the database.

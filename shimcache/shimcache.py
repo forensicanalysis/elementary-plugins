@@ -86,12 +86,12 @@ def transform(obj):
 
 def main():
     print(json.dumps({"header": ["Binary Last Modified", "Path"], "template": ""}))
-    store = forensicstore.connect(".")
+    store = forensicstore.open("input.forensicstore")
     conditions = [{
         'key':
             "HKEY_LOCAL_MACHINE\\System\\%ControlSet%\\Control\\Session Manager\\AppCompat%"
     }]
-    items = store.select("windows-registry-key", conditions)
+    items = store.select(conditions)
     for item in items:
         results = transform(item)
         for result in results:

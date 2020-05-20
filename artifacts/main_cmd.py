@@ -21,13 +21,9 @@ import argparse
 import logging
 import os
 import sys
-import json
 
 import encryption_handlers
-import fs
-import fs.path
 from artifact_collector import ArtifactExtractor
-
 from pyartifacts import Registry
 
 LOGGER = logging.getLogger(__name__)
@@ -49,8 +45,8 @@ def parse_args():
         help="Keyfile for decryption"
     )
     parser.add_argument(
-        "-o",
-        "--output-dir",
+        "-d",
+        "--dir",
         dest="output_dir",
         help="Output location (will be created)"
     )
@@ -64,12 +60,17 @@ def parse_args():
     parser.add_argument(
         "-i",
         "--input",
-        nargs='+',
+        # nargs='+',
         dest="input_evidence",
         help="Input file(s) (or folders) to process"
     )
+    parser.add_argument(
+        "forensicstores",
+        nargs='+',
+        help="Input forensicstore"
+    )
     parser.add_argument('-v', '--verbose', action='count', default=0)
-    my_args = parser.parse_args()
+    my_args, un = parser.parse_known_args(sys.argv[1:])
     if not all([my_args.input_evidence, my_args.artifact_names]):
         parser.error("The following arguments are required: -e/--extract, -i/--input")
     return my_args
@@ -88,26 +89,31 @@ class ArtifactExtractionCommand:
         self.args = args
 
     def run(self):
-        print("run", self.args)
         # create output evidence folder using pyfs
-        os.makedirs(self.args.output_dir, exist_ok=True)
-        out_fs = fs.open_fs(self.args.output_dir)
+        # os.makedirs(self.args.output_dir, exist_ok=True)
 
         # do we have a key list for decryption?
         encryption_keys = []
-        if args.keyfile:
-            with open(args.keyfile, 'r') as keyfile:
+        if self.args.keyfile:
+            with open(self.args.keyfile, 'r') as keyfile:
                 encryption_keys = encryption_handlers.read_key_list(keyfile)
 
         extractor = None
         try:
             handler = encryption_handlers.ConsoleEncryptionHandler(encryption_keys)
-            in_files = [f for f in self.args.input_evidence if f]
-            extractor = ArtifactExtractor(in_files, out_fs,
-                                          self.artifact_registry, handler)
-            for artifact in self.args.artifact_names:
-                print("Extract %s" % artifact)
-                extractor.extract_artifact(artifact)
+            in_evidence = [self.args.input_evidence]  # f for f in self.args.input_evidence if f]
+
+            in_files = []
+            for f in in_evidence:
+                for root, dirs, files in os.walk(f):
+                    for name in files:
+                        in_files.append(os.path.join(root, name))
+            for store in self.args.forensicstores:
+                extractor = ArtifactExtractor(in_files, os.path.join(self.args.output_dir, os.path.basename(store)),
+                                              self.artifact_registry, handler)
+                for artifact in self.args.artifact_names:
+                    print("Extract %s" % artifact)
+                    extractor.extract_artifact(artifact)
         except Exception as error:
             LOGGER.exception("Uncaught exception during job: %s", error)
         finally:
@@ -119,11 +125,9 @@ def cmd_mode(args):
     if not os.path.isdir(args.artifacts_path):
         print(f"Not a directory: {args.artifacts_path}")
         sys.exit(1)
-    for infile in args.input_evidence:
-        if infile:
-            if not os.path.exists(infile):
-                print(f"Input does not exist: {infile}")
-                sys.exit(1)
+    if not os.path.exists(args.input_evidence):
+        print(f"Input does not exist: {args.input_evidence}")
+        sys.exit(1)
     # levels = [logging.WARNING, logging.INFO, logging.DEBUG]
     level = logging.DEBUG  # levels[min(len(levels) - 1, args.verbose)]
     logging.basicConfig(format="[%(asctime)s] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=level)
@@ -133,6 +137,6 @@ def cmd_mode(args):
 
 
 if __name__ == '__main__':
-    args = parse_args()
-    print(args)
-    cmd_mode(args)
+    a = parse_args()
+    print(a)
+    cmd_mode(a)

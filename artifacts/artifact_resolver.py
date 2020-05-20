@@ -32,7 +32,6 @@ from forensicstore import ForensicStore
 from misc_utils import get_file_infos, CaseFoldSet
 from os_base import OperatingSystemBase
 from os_unknown import UnknownOS
-
 from pyartifacts import ArtifactDefinition, Registry, ArtifactSource, KnowledgeBase
 from pyartifacts import definitions as artifact_defs
 
@@ -392,19 +391,19 @@ class ArtifactResolver:
                              dfvfs_utils.reconstruct_full_path(export_file))
                 continue
 
-            store_obj_id = artifact_output.add_file_item(artifact_name, file_infos['name'],
-                                                         created=file_infos.get('created', None),
-                                                         modified=file_infos.get('modified', None),
-                                                         accessed=file_infos.get('accessed', None),
-                                                         origin={
-                                                             'path': file_infos['path'],
-                                                             'partition': self.partition_name
-                                                         },
-                                                         errors=None)
+            store_obj_id = artifact_output.add_file_element(artifact_name, file_infos['name'],
+                                                            created=file_infos.get('created', None),
+                                                            modified=file_infos.get('modified', None),
+                                                            accessed=file_infos.get('accessed', None),
+                                                            origin={
+                                                                'path': file_infos['path'],
+                                                                'partition': self.partition_name
+                                                            },
+                                                            errors=None)
             output_name = f"{self.partition_name}_" \
                           f"{dfvfs_utils.get_relative_path(export_file).replace('/', '_').strip('_')}"
             file_contents = dfvfs_helper.get_file_handle(export_file)
-            with artifact_output.add_file_item_export(store_obj_id, export_name=output_name) as file_export:
+            with artifact_output.add_file_element_export(store_obj_id, export_name=output_name) as file_export:
                 chunk_size = 65536
                 data = file_contents.read(chunk_size)
                 while data:
@@ -454,8 +453,8 @@ class ArtifactResolver:
         else:
             last_write_date = datetime.utcfromtimestamp(0)
         try:
-            key_item_id = store.add_registry_key_item(artifact=artifact, modified=last_write_date,
-                                                      key=key.path, errors=None)
+            key_item_id = store.add_registry_key_element(artifact=artifact, modified=last_write_date,
+                                                         key=key.path, errors=None)
         except TypeError as err:
             LOGGER.exception("Error adding registry key: %s", err)
             return
@@ -477,7 +476,7 @@ class ArtifactResolver:
             #     data = b""
 
             try:
-                store.add_registry_value_item(key_item_id, type_str, value.data, name)
+                store.add_registry_value_element(key_item_id, type_str, value.data, name)
             except sqlite3.OperationalError:
                 LOGGER.exception("Error updating value")
                 continue

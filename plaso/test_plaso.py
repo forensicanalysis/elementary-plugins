@@ -26,9 +26,11 @@ import pytest
 @pytest.fixture
 def data():
     tmpdir = tempfile.mkdtemp()
-    tmpdir = tmpdir.replace("/var/folders", "/private/var/folders") # Required for osx
-    shutil.copytree(os.path.join("test", "data"), os.path.join(tmpdir, "data"))
-    return os.path.join(tmpdir, "data")
+    shutil.copyfile(
+        os.path.join("test", "data", "example1.forensicstore"),
+        os.path.join(tmpdir, "input.forensicstore"))
+    tmpdir = tmpdir.replace("/var/folders", "/private/var/folders")  # Required for osx
+    return tmpdir
 
 
 def test_docker(data):
@@ -39,7 +41,7 @@ def test_docker(data):
     image, _ = client.images.build(path="plaso/", tag=image_tag)
 
     # run image
-    store_path = os.path.abspath(os.path.join(data, "example1.forensicstore"))
+    store_path = os.path.abspath(data)
     store_path_unix = store_path
     if store_path[1] == ":":
         store_path_unix = "/" + store_path.lower()[0] + store_path[2:].replace("\\", "/")
@@ -50,7 +52,7 @@ def test_docker(data):
     print(output)
 
     # test results
-    store = forensicstore.connect(store_path)
+    store = forensicstore.open(os.path.join(store_path, "input.forensicstore"))
     items = list(store.select("plaso"))
     store.close()
     assert len(items) == 69

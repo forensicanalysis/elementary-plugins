@@ -18,7 +18,6 @@
 # pylint: disable=fixme,invalid-name
 
 import logging
-import os.path
 import sys
 from typing import List
 
@@ -26,13 +25,11 @@ import definitions
 import dfvfs.lib.definitions as dfvfs_defs
 import dfvfs_helper
 import dfvfs_utils
-import fs.base
+import forensicstore
 from artifact_resolver import ArtifactResolver
 from definitions import PartitionInfo
-from forensicstore import ForensicStore
 from os_unknown import UnknownOS
 from os_windows import WindowsSystem
-
 from pyartifacts import Registry
 
 LOGGER = logging.getLogger(__name__)
@@ -45,7 +42,7 @@ class ArtifactExtractor(object):
 
     # pylint: disable=too-few-public-methods
 
-    def __init__(self, source_paths: List[str], result_root: fs.base.FS, artifact_registry: Registry,
+    def __init__(self, source_paths: List[str], url: str, artifact_registry: Registry,
                  encryption_handler: dfvfs_helper.EncryptionHandler):
         self.dfvfs_list = []
         self.artifact_registry = artifact_registry
@@ -54,7 +51,7 @@ class ArtifactExtractor(object):
         self.dfvfs_list = [dfvfs_helper.DFVFSHelper(new_source_path, encryption_handler)]
         self.encryption_handler = encryption_handler
         # noinspection PyTypeChecker
-        self.store = ForensicStore(result_root)
+        self.store = forensicstore.open(url)
 
     def clean_up(self):
         """ Called when no more actions will be called in this object """
@@ -71,6 +68,8 @@ class ArtifactExtractor(object):
         Extract a particular artifact from all possible locations within this dfvfs-image
         """
         real_partitions: List[PartitionInfo] = []
+
+        print("all", list(self.dfvfs_list[0].all_files()))
 
         # forensic images can have more than one partition, but we always only process one image at a time
         real_partitions = [PartitionInfo(helper=self.dfvfs_list[0], path_spec=partition, name=chr(ord('c') + i))
@@ -129,6 +128,8 @@ class ArtifactExtractor(object):
             path = dfvfs_utils.get_relative_path(path_spec)
             if path:
                 locations.append(path.lower().rstrip('/'))
+
+        print("locations", locations)
 
         # We need to check for both forward and backward slashes since the path
         # spec will be OS dependent, as in running the tool on Windows will return
