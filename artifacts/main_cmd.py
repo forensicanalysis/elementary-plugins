@@ -70,7 +70,7 @@ def parse_args():
         help="Input forensicstore"
     )
     parser.add_argument('-v', '--verbose', action='count', default=0)
-    my_args, un = parser.parse_known_args(sys.argv[1:])
+    my_args, _ = parser.parse_known_args(sys.argv[1:])
     if not all([my_args.input_evidence, my_args.artifact_names]):
         parser.error("The following arguments are required: -e/--extract, -i/--input")
     return my_args

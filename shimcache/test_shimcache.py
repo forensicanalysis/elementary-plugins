@@ -42,7 +42,7 @@ def test_shimcache(data):
     # Replace default stdout (terminal) with our stream
     sys.stdout = temp_out
 
-    shimcache.main()
+    shimcache.main(os.path.join(data, "input.forensicstore"))
 
     assert temp_out.getvalue().count("\n") == 391 + 1
 

@@ -32,10 +32,13 @@ import datetime
 import io as sio
 import json
 import logging
+import os
 import struct
+import sys
 import time
 from base64 import b64decode
 
+import argparse
 import forensicstore
 
 LOGGER = logging.getLogger(__name__)
@@ -84,9 +87,9 @@ def transform(obj):
     return result_obj
 
 
-def main():
+def main(url):
     print(json.dumps({"header": ["Binary Last Modified", "Path"], "template": ""}))
-    store = forensicstore.open("input.forensicstore")
+    store = forensicstore.open(url)
     conditions = [{
         'key':
             "HKEY_LOCAL_MACHINE\\System\\%ControlSet%\\Control\\Session Manager\\AppCompat%"
@@ -626,4 +629,12 @@ def read_winxp_entries(bin_data):
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="Process forensic images and extract artifacts")
+    parser.add_argument(
+        "forensicstore",
+        help="Input forensicstore"
+    )
+    my_args, _ = parser.parse_known_args(sys.argv[1:])
+    url = os.path.join("/store", os.path.basename(my_args.forensicstore))
+
+    main(url)
