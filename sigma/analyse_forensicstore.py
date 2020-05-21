@@ -1,19 +1,17 @@
 import argparse
-import sys
-import os
-import logging
 import json
+import logging
+import os
+import sys
 from datetime import datetime
-
-import forensicstore
-
 from sqlite3 import OperationalError
 
+import forensicstore
+from forensicstore_backend import ForensicStoreBackend
 from sigma.configuration import SigmaConfiguration
-from sigma.parser.exceptions import SigmaParseError
 from sigma.parser.collection import SigmaCollectionParser
+from sigma.parser.exceptions import SigmaParseError
 
-from SQLite import SQLiteBackend
 
 class bcolors:
     HEADER = '\033[95m'
@@ -25,14 +23,18 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+
 def error(msg, *argv):
     logging.info(bcolors.FAIL + msg + bcolors.ENDC, *argv)
+
 
 def info(msg, *argv):
     logging.info(bcolors.OKGREEN + msg + bcolors.ENDC, *argv)
 
+
 def warning(msg, *argv):
     logging.warning(bcolors.WARNING + msg + bcolors.ENDC, *argv)
+
 
 class ErrorHelper:
     def __init__(self, message):
@@ -60,27 +62,14 @@ class Statistics:
         self.errors[val].add(file)
 
 
-class SQLBackend_Quotes(SQLiteBackend):
-
-    """
-    Overriding method of SQLBackend to ensure quotes around the filedname
-    """
-
-    def __init__(self, sigmaconfig, table):
-        super().__init__(sigmaconfig, table)
-
-    def fieldNameMapping(self, fieldname, value):
-        return "`" + fieldname + "`"
-
-
-class ForensicstoreSigma():
+class ForensicstoreSigma:
 
     def __init__(self, pathForensicstore, nameTable, pathSigmaConfig):
 
         self.table = nameTable
 
         if os.path.exists(pathForensicstore):
-            self.store = forensicstore.ForensicStore(pathForensicstore, False)
+            self.store = forensicstore.open(pathForensicstore)
         else:
             raise IOError("Forensicstore not found " + pathForensicstore)
 
@@ -89,33 +78,13 @@ class ForensicstoreSigma():
         else:
             self.config = None
 
-        self.SQL = SQLBackend_Quotes(self.config, self.table)
+        self.SQL = ForensicStoreBackend(self.config, self.table)
 
     def __del__(self):
         try:
             self.store.close()
         except Exception as e:
             pass
-        
-
-    # def createVirtualTable(self):
-    #     # Creating a virtual table in order to enable full text search
-    #     try:
-    #         cur = self.store.connection.cursor()
-
-    #         column_names = cur.execute("SELECT name FROM PRAGMA_TABLE_INFO('" + self.table + "');")
-    #         column_names = ["`"+e["name"]+"`" for e in column_names]
-
-    #         list(cur.execute("CREATE VIRTUAL TABLE IF NOT EXISTS {} USING fts5({}, tokenize=\"unicode61 tokenchars '{}'\");".format(
-    #             self.virtualTable, ",".join(column_names), "/.")))
-    #         list(cur.execute(
-    #             "INSERT INTO {} SELECT * FROM {}".format(self.virtualTable, self.table)))
-    #         cur.commit()
-    #         cur.close()
-    #     except Exception as e:
-    #         print("Could not create virtual table in database: {}".format(e))
-    #         return False
-    #     return True
 
     def generateSqlQuery(self, sigma_io):
 
@@ -141,20 +110,21 @@ class ForensicstoreSigma():
         with open(path) as sigma_io:
             queries = self.generateSqlQuery(sigma_io)
             for query, rule in queries:
+                # print(query)
                 result = self.store.query(query)
-                for item in result:
+                for element in result:
                     dic = {"name": rule["title"],
                            "level": rule["level"],
                            "type": "alert"}
-                    dic.update(item)
-                    if "System" in dic and "TimeCreated" in dic["System"] and "SystemTime" in dic["System"]["TimeCreated"]:
+                    dic.update(element)
+                    if "System" in dic and "TimeCreated" in dic["System"] and "SystemTime" in dic["System"][
+                        "TimeCreated"]:
                         t = datetime.fromtimestamp(int(dic["System"]["TimeCreated"]["SystemTime"]))
                         dic["time"] = t.isoformat()
-                    if "agg" not in item:
-                        dic["item_ref"] = item["uid"]
+                    if "agg" not in element:
+                        dic["item_ref"] = element["id"]
                     print(json.dumps(dic))
             return True
-
 
     def analyseStore(self, path):
         statistics = Statistics()
@@ -217,7 +187,15 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
-    analysis = ForensicstoreSigma("/store", "eventlog", "/app/config.yaml")
+    parser = argparse.ArgumentParser(description="Process forensic images and extract artifacts")
+    parser.add_argument(
+        "forensicstore",
+        help="Input forensicstore"
+    )
+    my_args, _ = parser.parse_known_args(sys.argv[1:])
+    url = os.path.join("/store", os.path.basename(my_args.forensicstore))
+
+    analysis = ForensicstoreSigma(url, "xxx", "/app/config.yaml")
     statistics = analysis.analyseStore("/app/rules")
 
     # sum = 0

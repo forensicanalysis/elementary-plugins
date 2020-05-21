@@ -46,8 +46,9 @@ def test_docker(data):
     if store_path[1] == ":":
         store_path_unix = "/" + store_path.lower()[0] + store_path[2:].replace("\\", "/")
     volumes = {store_path_unix: {'bind': '/store', 'mode': 'rw'}}
-    # plugin_dir: {'bind': '/plugins', 'mode': 'ro'}
-    output = client.containers.run(image_tag, command=["--filter", "artifact=WindowsDeviceSetup", "input.forensicstore"], volumes=volumes,
+    output = client.containers.run(image_tag,
+                                   command=["--filter", "artifact=WindowsDeviceSetup", "input.forensicstore"],
+                                   volumes=volumes,
                                    stderr=True, stdout=True)
     print(output)
 

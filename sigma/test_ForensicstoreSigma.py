@@ -1,7 +1,8 @@
 import unittest
 from unittest.mock import patch, mock_open, MagicMock
 
-from analyse_forensicstore import SQLBackend_Quotes, ForensicstoreSigma
+from analyse_forensicstore import ForensicstoreSigma
+from forensicstore_backend import ForensicStoreBackend
 
 from sigma.parser.exceptions import SigmaParseError
 from sigma.configuration import SigmaConfiguration
@@ -99,7 +100,7 @@ class TestGenerateSqlQuery(unittest.TestCase):
     def test_empty_io_stream(self):
         self.analysis.config = SigmaConfiguration()
         self.analysis.table = "tablename"
-        self.analysis.SQL = SQLBackend_Quotes(
+        self.analysis.SQL = ForensicStoreBackend(
             self.analysis.config, self.analysis.table)
 
         with patch("builtins.open", mock_open(read_data="")):
@@ -108,7 +109,7 @@ class TestGenerateSqlQuery(unittest.TestCase):
     def test_invalid_io_stream(self):
         self.analysis.config = SigmaConfiguration()
         self.analysis.table = "tablename"
-        self.analysis.SQL = SQLBackend_Quotes(
+        self.analysis.SQL = ForensicStoreBackend(
             self.analysis.config, self.analysis.table)
 
         with patch("builtins.open", mock_open(read_data="not valid\n\nwhatever")):
@@ -125,7 +126,7 @@ class TestGenerateSqlQuery(unittest.TestCase):
         # Setting attributes for testing
         self.analysis.config = SigmaConfiguration()
         self.analysis.table = "tablename"
-        self.analysis.SQL = SQLBackend_Quotes(
+        self.analysis.SQL = ForensicStoreBackend(
             self.analysis.config, self.analysis.table)
 
         sigma_rule = {"title": "Test", "level": "testing", "detection": {
