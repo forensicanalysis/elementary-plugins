@@ -64,7 +64,7 @@ class TestHandleFile(unittest.TestCase):
 
                         # Expect successful handle, two SQL results
                         self.analysis.store.query.return_value = [
-                            {'uid': 'faked_return'}, {'uid': 'faked_return'}]
+                            {'id': 'faked_return'}, {'id': 'faked_return'}]
                         assert self.analysis.handleFile("any/file")
                         mocked_open.assert_called_with("any/file")
                         self.analysis.store.query.assert_called_with(
