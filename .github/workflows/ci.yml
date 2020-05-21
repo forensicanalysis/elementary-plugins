@@ -36,3 +36,9 @@ jobs:
         run: bash <(curl -s https://codecov.io/bash) -f coverage.xml
         # if: matrix.os == 'windows-latest'
         shell: bash
+
+      - name: Upload
+        uses: actions/upload-artifact@master
+        with:
+          name: forensicstore
+          path: ./input.forensicstore
