@@ -2,10 +2,10 @@ import unittest
 from unittest.mock import patch
 
 from SQL import SQLBackend
-
-from sigma.parser.collection import SigmaCollectionParser
 from sigma.config.mapping import FieldMapping
 from sigma.configuration import SigmaConfiguration
+from sigma.parser.collection import SigmaCollectionParser
+
 
 class TestGenerateQuery(unittest.TestCase):
 
@@ -290,11 +290,10 @@ class TestGenerateQuery(unittest.TestCase):
         expected_result = NotImplementedError()
         self.validate(detection, expected_result)
 
-        #Full Text Search is not implemented
+        # Full Text Search is not implemented
         detection = {"selection": ["test1"], "condition": "selection"}
         expected_result = NotImplementedError()
         self.validate(detection, expected_result)
-
 
     def validate(self, detection, expectation):
 

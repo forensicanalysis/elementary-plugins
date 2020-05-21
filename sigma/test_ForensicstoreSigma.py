@@ -3,9 +3,9 @@ from unittest.mock import patch, mock_open, MagicMock
 
 from analyse_forensicstore import ForensicstoreSigma
 from forensicstore_backend import ForensicStoreBackend
-
-from sigma.parser.exceptions import SigmaParseError
 from sigma.configuration import SigmaConfiguration
+from sigma.parser.exceptions import SigmaParseError
+
 
 class TestHandleFile(unittest.TestCase):
 
@@ -27,11 +27,10 @@ class TestHandleFile(unittest.TestCase):
         assert self.analysis.handleFile("does-not-exist") == False
 
     def test_file_empty(self):
-
         with patch("os.path.exists", return_value=True):
             with patch("builtins.open", mock_open(read_data="data")) as mocked_open:
-                with patch("analyse_forensicstore.ForensicstoreSigma.generateSqlQuery", return_value=tuple()) as mocked_generate_sql_query:
-
+                with patch("analyse_forensicstore.ForensicstoreSigma.generateSqlQuery",
+                           return_value=tuple()) as mocked_generate_sql_query:
                     # Expect successful handle, file is empty
                     assert self.analysis.handleFile("any/file")
                     mocked_open.assert_called_with("any/file")
@@ -39,7 +38,6 @@ class TestHandleFile(unittest.TestCase):
                         mocked_open.return_value)
 
     def test_file_content(self):
-
         self.analysis.store = MagicMock()
 
         sigma_rule = {"title": "Test", "level": "testing", "detection": {
@@ -48,9 +46,9 @@ class TestHandleFile(unittest.TestCase):
 
         with patch("os.path.exists", return_value=True):
             with patch("builtins.open", mock_open(read_data="data")) as mocked_open:
-                with patch("analyse_forensicstore.ForensicstoreSigma.generateSqlQuery", return_value=generate_query_return) as mocked_generate_sql_query:
+                with patch("analyse_forensicstore.ForensicstoreSigma.generateSqlQuery",
+                           return_value=generate_query_return) as mocked_generate_sql_query:
                     with patch("builtins.print") as mocked_print:
-
                         # Expect successful handle, but no SQL results
                         self.analysis.store.query = MagicMock(return_value=[])
                         assert self.analysis.handleFile("any/file")
@@ -85,6 +83,7 @@ class TestHandleFile(unittest.TestCase):
                             mocked_open.return_value)
                         assert mocked_print.call_count == 1
 
+
 class TestGenerateSqlQuery(unittest.TestCase):
 
     def setUp(self):
@@ -100,8 +99,7 @@ class TestGenerateSqlQuery(unittest.TestCase):
     def test_empty_io_stream(self):
         self.analysis.config = SigmaConfiguration()
         self.analysis.table = "tablename"
-        self.analysis.SQL = ForensicStoreBackend(
-            self.analysis.config, self.analysis.table)
+        self.analysis.SQL = ForensicStoreBackend(self.analysis.config)
 
         with patch("builtins.open", mock_open(read_data="")):
             assert self.analysis.generateSqlQuery(open("empty file")) == []
@@ -109,8 +107,7 @@ class TestGenerateSqlQuery(unittest.TestCase):
     def test_invalid_io_stream(self):
         self.analysis.config = SigmaConfiguration()
         self.analysis.table = "tablename"
-        self.analysis.SQL = ForensicStoreBackend(
-            self.analysis.config, self.analysis.table)
+        self.analysis.SQL = ForensicStoreBackend(self.analysis.config)
 
         with patch("builtins.open", mock_open(read_data="not valid\n\nwhatever")):
             self.assertRaises(
@@ -126,8 +123,7 @@ class TestGenerateSqlQuery(unittest.TestCase):
         # Setting attributes for testing
         self.analysis.config = SigmaConfiguration()
         self.analysis.table = "tablename"
-        self.analysis.SQL = ForensicStoreBackend(
-            self.analysis.config, self.analysis.table)
+        self.analysis.SQL = ForensicStoreBackend(self.analysis.config)
 
         sigma_rule = {"title": "Test", "level": "testing", "detection": {
             "keywords": ["test1", "test2"], "condition": "keywords"}}
@@ -147,6 +143,7 @@ class TestGenerateSqlQuery(unittest.TestCase):
 
                 assert mock_yaml_load.call_count == 2
                 assert mock_sql_generate.call_count == 3
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -64,21 +64,16 @@ class Statistics:
 
 class ForensicstoreSigma:
 
-    def __init__(self, pathForensicstore, nameTable, pathSigmaConfig):
+    def __init__(self, url, sigmaconfig):
+        if not os.path.exists(sigmaconfig):
+            raise FileNotFoundError(sigmaconfig)
+        if not os.path.exists(url):
+            raise FileNotFoundError(url)
 
-        self.table = nameTable
-
-        if os.path.exists(pathForensicstore):
-            self.store = forensicstore.open(pathForensicstore)
-        else:
-            raise IOError("Forensicstore not found " + pathForensicstore)
-
-        if os.path.exists(pathSigmaConfig):
-            self.config = SigmaConfiguration(open(pathSigmaConfig))
-        else:
-            self.config = None
-
-        self.SQL = ForensicStoreBackend(self.config, self.table)
+        self.table = "elements"
+        self.store = forensicstore.open(url)
+        self.config = SigmaConfiguration(open(sigmaconfig))
+        self.SQL = ForensicStoreBackend(self.config)
 
     def __del__(self):
         try:
@@ -110,7 +105,6 @@ class ForensicstoreSigma:
         with open(path) as sigma_io:
             queries = self.generateSqlQuery(sigma_io)
             for query, rule in queries:
-                # print(query)
                 result = self.store.query(query)
                 for element in result:
                     dic = {"name": rule["title"],
@@ -165,7 +159,7 @@ class ForensicstoreSigma:
         return statistics
 
 
-if __name__ == '__main__':
+def main():
     header = [
         "name",
         "level",
@@ -179,24 +173,19 @@ if __name__ == '__main__':
     ]
     print(json.dumps({"header": header, "template": ""}))
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Process forensic images and extract artifacts")
     parser.add_argument('--debug', dest='debug', action='store_true', default=False)
-    args, _ = parser.parse_known_args()
+    parser.add_argument("forensicstore", help="Input forensicstore")
+    args, _ = parser.parse_known_args(sys.argv[1:])
     if not args.debug:
         logging.getLogger().disabled = True
     else:
         logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
-    parser = argparse.ArgumentParser(description="Process forensic images and extract artifacts")
-    parser.add_argument(
-        "forensicstore",
-        help="Input forensicstore"
-    )
-    my_args, _ = parser.parse_known_args(sys.argv[1:])
-    url = os.path.join("/store", os.path.basename(my_args.forensicstore))
+    url = os.path.join("/store", os.path.basename(args.forensicstore))
 
-    analysis = ForensicstoreSigma(url, "xxx", "/app/config.yaml")
-    statistics = analysis.analyseStore("/app/rules")
+    analysis = ForensicstoreSigma(url, "/app/config.yaml")
+    statistics = analysis.analyseStore("/rules")
 
     # sum = 0
     # lis = sorted(statistics.errors.values(),
@@ -208,3 +197,7 @@ if __name__ == '__main__':
     # print(sum)
 
     info("Handled %s of %s files successfully.", statistics.successFiles, statistics.totalFiles)
+
+
+if __name__ == '__main__':
+    main()

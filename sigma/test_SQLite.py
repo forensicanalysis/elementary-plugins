@@ -2,10 +2,9 @@ import unittest
 from unittest.mock import patch
 
 from SQLite import SQLiteBackend
-
-from sigma.parser.collection import SigmaCollectionParser
-from sigma.config.mapping import FieldMapping
 from sigma.configuration import SigmaConfiguration
+from sigma.parser.collection import SigmaCollectionParser
+
 
 class TestFullTextSearch(unittest.TestCase):
 
@@ -29,7 +28,7 @@ class TestFullTextSearch(unittest.TestCase):
             self.table)
         self.validate(detection, expected_result)
 
-        detection = {"selection": ["test1"], "filter":["test2"], "condition": "selection and filter"}
+        detection = {"selection": ["test1"], "filter": ["test2"], "condition": "selection and filter"}
         expected_result = 'select * from {0} where ({0} match (\'"test1" and "test2"\'))'.format(
             self.table)
         self.validate(detection, expected_result)
@@ -74,7 +73,7 @@ class TestFullTextSearch(unittest.TestCase):
             self.table)
         expected_result = 'select * from ({}) where agg > 5'.format(inner_query)
         self.validate(detection, expected_result)
-    
+
     def test_not_implemented(self):
         # fts not implemented with wildcards
         detection = {"selection": ["test*"], "condition": "selection"}
@@ -88,7 +87,6 @@ class TestFullTextSearch(unittest.TestCase):
         detection = {"selection": ["test\\"], "condition": "selection"}
         expected_result = NotImplementedError()
         self.validate(detection, expected_result)
-
 
         # fts is not implemented for nested condtions
         detection = {"selection": ["test"], "filter": [
@@ -128,6 +126,7 @@ class TestFullTextSearch(unittest.TestCase):
                                      backend.generate(p).lower())
                 elif isinstance(expectation, Exception):
                     self.assertRaises(type(expectation), backend.generate, p)
+
 
 if __name__ == '__main__':
     unittest.main()

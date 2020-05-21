@@ -1,7 +1,7 @@
+import re
 
 from SQL import SQLBackend
-from sigma.parser.condition import NodeSubexpression, ConditionAND, ConditionOR, ConditionNOT
-import re
+
 
 class SQLiteBackend(SQLBackend):
     mapFullTextSearch = "%s match ('\"%s\"')"
@@ -11,8 +11,9 @@ class SQLiteBackend(SQLBackend):
         self.mappingItem = False
 
     def requireFTS(self, node):
-        return (not self.mappingItem and 
-            (type(node) in (int,str) or all(isinstance(val, str) for val in node) or all(isinstance(val, int) for val in node)))
+        return (not self.mappingItem and
+                (type(node) in (int, str) or all(isinstance(val, str) for val in node) or all(
+                    isinstance(val, int) for val in node)))
 
     def generateFTS(self, value):
         if re.search(r"((\\(\*|\?|\\))|\*|\?|_|%)", value):
@@ -25,9 +26,9 @@ class SQLiteBackend(SQLBackend):
         if self.requireFTS(node):
             fts = str('"' + self.andToken + '"').join(self.cleanValue(val) for val in node)
             return self.generateFTS(fts)
-            
-        generated = [ self.generateNode(val) for val in node ]
-        filtered = [ g for g in generated if g is not None ]
+
+        generated = [self.generateNode(val) for val in node]
+        filtered = [g for g in generated if g is not None]
         if filtered:
             return self.andToken.join(filtered)
         else:
@@ -39,13 +40,12 @@ class SQLiteBackend(SQLBackend):
             fts = str('"' + self.orToken + '"').join(self.cleanValue(val) for val in node)
             return self.generateFTS(fts)
 
-        generated = [ self.generateNode(val) for val in node ]
-        filtered = [ g for g in generated if g is not None ]
+        generated = [self.generateNode(val) for val in node]
+        filtered = [g for g in generated if g is not None]
         if filtered:
             return self.orToken.join(filtered)
         else:
             return None
-
 
     def generateMapItemNode(self, node):
         try:
@@ -55,15 +55,15 @@ class SQLiteBackend(SQLBackend):
 
             has_wildcard = re.search(r"((\\(\*|\?|\\))|\*|\?|_|%)", self.generateNode(value))
 
-            if "," in self.generateNode(value) and not has_wildcard:        
+            if "," in self.generateNode(value) and not has_wildcard:
                 return self.mapMulti % (transformed_fieldname, self.generateNode(value))
             elif "LENGTH" in transformed_fieldname:
                 return self.mapLength % (transformed_fieldname, value)
             elif type(value) == list:
                 return self.generateMapItemListNode(transformed_fieldname, value)
-            elif self.mapListsSpecialHandling == False and type(value) in (str, int, list) or self.mapListsSpecialHandling == True and type(value) in (str, int):
-                
-            
+            elif self.mapListsSpecialHandling == False and type(value) in (
+            str, int, list) or self.mapListsSpecialHandling == True and type(value) in (str, int):
+
                 if has_wildcard:
                     return self.mapWildcard % (transformed_fieldname, self.generateNode(value))
                 else:
@@ -87,19 +87,21 @@ class SQLiteBackend(SQLBackend):
     def generateQuery(self, parsed):
         self.countFTS = 0
         result = self.generateNode(parsed.parsedSearch)
-        if self.countFTS>1:
-            raise NotImplementedError("Match operator ({}) is allowed only once in SQLite, parse rule in a different way:\n{}".format(self.countFTS, result))
+        if self.countFTS > 1:
+            raise NotImplementedError(
+                "Match operator ({}) is allowed only once in SQLite, parse rule in a different way:\n{}".format(
+                    self.countFTS, result))
         self.countFTS = 0
 
         if parsed.parsedAgg:
-            #Handle aggregation
+            # Handle aggregation
             fro, whe = self.generateAggregation(parsed.parsedAgg, result)
             return "Select * From {} Where {}".format(fro, whe)
 
         return "Select * From {} Where {}".format(self.table, result)
-    
+
     def generateFullTextQuery(self, search, parsed):
-                
+
         search = search.replace('"', '')
         search = '" OR "'.join(search.split(" OR "))
         search = '" AND "'.join(search.split(" AND "))
@@ -107,12 +109,10 @@ class SQLiteBackend(SQLBackend):
         search = search.replace('%', '')
         search = search.replace('_', '')
         search = '{} match (\'{}\')'.format(self.table, search)
-              
+
         if parsed.parsedAgg:
-            #Handle aggregation
+            # Handle aggregation
             fro, whe = self.generateAggregation(parsed.parsedAgg, search)
             return "Select * From {} Where {}".format(fro, whe)
 
         return 'Select * from {} where {}'.format(self.table, search)
-
-                

@@ -15,31 +15,32 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
-import sigma
+
 from sigma.backends.base import SingleTextQueryBackend
 from sigma.parser.condition import SigmaAggregationParser, NodeSubexpression, ConditionAND, ConditionOR, ConditionNOT
 from sigma.parser.exceptions import SigmaParseError
+
 
 class SQLBackend(SingleTextQueryBackend):
     """Converts Sigma rule into SQL query"""
     identifier = "sql"
     active = True
 
-    andToken = " AND "                      # Token used for linking expressions with logical AND
-    orToken = " OR "                        # Same for OR
-    notToken = "NOT "                       # Same for NOT
-    subExpression = "(%s)"                  # Syntax for subexpressions, usually parenthesis around it. %s is inner expression
-    listExpression = "(%s)"                 # Syntax for lists, %s are list items separated with listSeparator
-    listSeparator = ", "                    # Character for separation of list items
-    valueExpression = "\"%s\""              # Expression of values, %s represents value
-    nullExpression = "-%s=*"                # Expression of queries for null values or non-existing fields. %s is field name
-    notNullExpression = "%s=*"              # Expression of queries for not null values. %s is field name
-    mapExpression = "%s = %s"               # Syntax for field/value conditions. First %s is fieldname, second is value
-    mapMulti = "%s IN %s"                   # Syntax for field/value conditions. First %s is fieldname, second is value
-    mapWildcard = "%s LIKE %s escape \'\\\'"# Syntax for swapping wildcard conditions: Adding \ as escape character          
-    mapSource = "%s=%s"                     # Syntax for sourcetype
-    mapListsSpecialHandling = False         # Same handling for map items with list values as for normal values (strings, integers) if True, generateMapItemListNode method is called with node
-    mapListValueExpression = "%s OR %s"     # Syntax for field/value condititons where map value is a list
+    andToken = " AND "  # Token used for linking expressions with logical AND
+    orToken = " OR "  # Same for OR
+    notToken = "NOT "  # Same for NOT
+    subExpression = "(%s)"  # Syntax for subexpressions, usually parenthesis around it. %s is inner expression
+    listExpression = "(%s)"  # Syntax for lists, %s are list items separated with listSeparator
+    listSeparator = ", "  # Character for separation of list items
+    valueExpression = "\"%s\""  # Expression of values, %s represents value
+    nullExpression = "-%s=*"  # Expression of queries for null values or non-existing fields. %s is field name
+    notNullExpression = "%s=*"  # Expression of queries for not null values. %s is field name
+    mapExpression = "%s = %s"  # Syntax for field/value conditions. First %s is fieldname, second is value
+    mapMulti = "%s IN %s"  # Syntax for field/value conditions. First %s is fieldname, second is value
+    mapWildcard = "%s LIKE %s escape \'\\\'"  # Syntax for swapping wildcard conditions: Adding \ as escape character
+    mapSource = "%s=%s"  # Syntax for sourcetype
+    mapListsSpecialHandling = False  # Same handling for map items with list values as for normal values (strings, integers) if True, generateMapItemListNode method is called with node
+    mapListValueExpression = "%s OR %s"  # Syntax for field/value condititons where map value is a list
     mapLength = "(%s %s)"
 
     def __init__(self, sigmaconfig, table):
@@ -47,16 +48,16 @@ class SQLBackend(SingleTextQueryBackend):
         self.table = table
 
     def generateANDNode(self, node):
-        generated = [ self.generateNode(val) for val in node ]
-        filtered = [ g for g in generated if g is not None ]
+        generated = [self.generateNode(val) for val in node]
+        filtered = [g for g in generated if g is not None]
         if filtered:
             return self.andToken.join(filtered)
         else:
             return None
 
     def generateORNode(self, node):
-        generated = [ self.generateNode(val) for val in node ]
-        filtered = [ g for g in generated if g is not None ]
+        generated = [self.generateNode(val) for val in node]
+        filtered = [g for g in generated if g is not None]
         if filtered:
             return self.orToken.join(filtered)
         else:
@@ -87,13 +88,14 @@ class SQLBackend(SingleTextQueryBackend):
 
         has_wildcard = re.search(r"((\\(\*|\?|\\))|\*|\?|_|%)", self.generateNode(value))
 
-        if "," in self.generateNode(value) and not has_wildcard:        
+        if "," in self.generateNode(value) and not has_wildcard:
             return self.mapMulti % (transformed_fieldname, self.generateNode(value))
         elif "LENGTH" in transformed_fieldname:
             return self.mapLength % (transformed_fieldname, value)
         elif type(value) == list:
             return self.generateMapItemListNode(transformed_fieldname, value)
-        elif self.mapListsSpecialHandling == False and type(value) in (str, int, list) or self.mapListsSpecialHandling == True and type(value) in (str, int):          
+        elif self.mapListsSpecialHandling == False and type(value) in (
+        str, int, list) or self.mapListsSpecialHandling == True and type(value) in (str, int):
             if has_wildcard:
                 return self.mapWildcard % (transformed_fieldname, self.generateNode(value))
             else:
@@ -107,9 +109,9 @@ class SQLBackend(SingleTextQueryBackend):
 
     def generateMapItemListNode(self, key, value):
         return "(" + (" OR ".join([self.mapWildcard % (key, self.generateValueNode(item)) for item in value])) + ")"
-    
+
     def generateValueNode(self, node):
-            return self.valueExpression % (self.cleanValue(str(node)))
+        return self.valueExpression % (self.cleanValue(str(node)))
 
     def generateNULLValueNode(self, node):
         return self.nullExpression % (node.item)
@@ -129,31 +131,31 @@ class SQLBackend(SingleTextQueryBackend):
         if not isinstance(val, str):
             return str(val)
 
-        #Single backlashes which are not in front of * or ? are doulbed
+        # Single backlashes which are not in front of * or ? are doulbed
         val = re.sub(r"(?<!\\)\\(?!(\\|\*|\?))", r"\\\\", val)
 
-        #Replace _ with \_ because _ is a sql wildcard
+        # Replace _ with \_ because _ is a sql wildcard
         val = re.sub(r'_', r'\_', val)
 
-        #Replace % with \% because % is a sql wildcard
+        # Replace % with \% because % is a sql wildcard
         val = re.sub(r'%', r'\%', val)
 
-        #Replace * with %, if even number of backslashes (or zero) in front of *
+        # Replace * with %, if even number of backslashes (or zero) in front of *
         val = re.sub(r"(?<!\\)(\\\\)*(?!\\)\*", r"\1%", val)
 
-        #Replace ? with _, if even number of backsashes (or zero) in front of ?
+        # Replace ? with _, if even number of backsashes (or zero) in front of ?
         val = re.sub(r"(?<!\\)(\\\\)*(?!\\)\?", r"\1_", val)
         return val
- 
+
     def generateAggregation(self, agg, where_clausel):
         if not agg:
             return self.table, where_clausel
-        
-        if  (agg.aggfunc == SigmaAggregationParser.AGGFUNC_COUNT or
-            agg.aggfunc == SigmaAggregationParser.AGGFUNC_MAX or
-            agg.aggfunc == SigmaAggregationParser.AGGFUNC_MIN or
-            agg.aggfunc == SigmaAggregationParser.AGGFUNC_SUM or
-            agg.aggfunc == SigmaAggregationParser.AGGFUNC_AVG):
+
+        if (agg.aggfunc == SigmaAggregationParser.AGGFUNC_COUNT or
+                agg.aggfunc == SigmaAggregationParser.AGGFUNC_MAX or
+                agg.aggfunc == SigmaAggregationParser.AGGFUNC_MIN or
+                agg.aggfunc == SigmaAggregationParser.AGGFUNC_SUM or
+                agg.aggfunc == SigmaAggregationParser.AGGFUNC_AVG):
 
             if agg.groupfield:
                 group_by = " Group By {0}".format(self.fieldNameMapping(agg.groupfield, None))
@@ -166,13 +168,14 @@ class SQLBackend(SingleTextQueryBackend):
                 if agg.aggfunc == SigmaAggregationParser.AGGFUNC_COUNT:
                     select = "{}(*) as agg".format(agg.aggfunc_notrans)
                 else:
-                    raise SigmaParseError("For {} aggregation a fieldname needs to be specified".format(agg.aggfunc_notrans))
-            
+                    raise SigmaParseError(
+                        "For {} aggregation a fieldname needs to be specified".format(agg.aggfunc_notrans))
+
             temp_table = "(Select {} From {} Where {}{})".format(select, self.table, where_clausel, group_by)
-            agg_condition =  "agg {} {}".format(agg.cond_op, agg.condition)
+            agg_condition = "agg {} {}".format(agg.cond_op, agg.condition)
 
             return temp_table, agg_condition
-        
+
         raise NotImplementedError("{} aggregation not implemented in SQL Backend".format(agg.aggfunc_notrans))
 
     def generateQuery(self, parsed):
@@ -181,19 +184,19 @@ class SQLBackend(SingleTextQueryBackend):
         result = self.generateNode(parsed.parsedSearch)
 
         if parsed.parsedAgg:
-            #Handle aggregation
+            # Handle aggregation
             fro, whe = self.generateAggregation(parsed.parsedAgg, result)
             return "Select * From {} Where {}".format(fro, whe)
 
         return "Select * From {} Where {}".format(self.table, result)
 
     def _recursiveFtsSearch(self, subexpression):
-        #True: found subexpression, where no fieldname is requested -> full text search
-        #False: no subexpression found, where a full text search is needed
+        # True: found subexpression, where no fieldname is requested -> full text search
+        # False: no subexpression found, where a full text search is needed
 
         def _evaluateCondition(condition):
-            #Helper function to evaulate condtions
-            if type(condition) not in  [ConditionAND, ConditionOR, ConditionNOT]:
+            # Helper function to evaulate condtions
+            if type(condition) not in [ConditionAND, ConditionOR, ConditionNOT]:
                 raise NotImplementedError("Error in recursive Search logic")
 
             results = []

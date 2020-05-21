@@ -2,24 +2,30 @@ from SQLite import SQLiteBackend
 
 
 class ForensicStoreBackend(SQLiteBackend):
-    nullExpression = "-json_extract(json, '$.%s')=*"  # Expression of queries for null values or non-existing fields. %s is field name
-    notNullExpression = "json_extract(json, '$.%s')=*"  # Expression of queries for not null values. %s is field name
-    mapExpression = "json_extract(json, '$.%s') = %s"  # Syntax for field/value conditions. First %s is fieldname, second is value
-    mapMulti = "json_extract(json, '$.%s') IN %s"  # Syntax for field/value conditions. First %s is fieldname, second is value
-    mapWildcard = "json_extract(json, '$.%s') LIKE %s ESCAPE \'\\\'"  # Syntax for swapping wildcard conditions: Adding \ as escape character
-    mapSource = "json_extract(json, '$.%s')=%s"  # Syntax for sourcetype
+    # Expression of queries for null values or non-existing fields. %s is field name
+    nullExpression = "-json_extract(json, '$.%s')=*"
+    # Expression of queries for not null values. %s is field name
+    notNullExpression = "json_extract(json, '$.%s')=*"
+    # Syntax for field/value conditions. First %s is fieldname, second is value
+    mapExpression = "json_extract(json, '$.%s') = %s"
+    # Syntax for field/value conditions. First %s is fieldname, second is value
+    mapMulti = "json_extract(json, '$.%s') IN %s"
+    # Syntax for swapping wildcard conditions: Adding \ as escape character
+    mapWildcard = "json_extract(json, '$.%s') LIKE %s ESCAPE \'\\\'"
+    # Syntax for sourcetype
+    mapSource = "json_extract(json, '$.%s')=%s"
 
-    def __init__(self, sigmaconfig, table):
-        super().__init__(sigmaconfig, table)
+    def __init__(self, sigmaconfig):
+        super().__init__(sigmaconfig, "elements")
         self.mappingItem = False
 
     def generateQuery(self, parsed):
         self.countFTS = 0
         result = self.generateNode(parsed.parsedSearch)
         if self.countFTS > 1:
-            raise NotImplementedError(
-                "Match operator ({}) is allowed only once in SQLite, parse rule in a different way:\n{}".format(
-                    self.countFTS, result))
+            msg = "Match operator ({}) is allowed only once in SQLite, " \
+                  "parse rule in a different way:\n{}".format(self.countFTS, result)
+            raise NotImplementedError(msg)
         self.countFTS = 0
 
         if parsed.parsedAgg:
