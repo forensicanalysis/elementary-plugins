@@ -48,7 +48,7 @@ def test_docker(tmp):
 
     # build image
     image_tag = "test_artifacts"
-    image, _ = client.images.build(path="artifacts/", tag=image_tag)
+    image, _ = client.images.build(path="import-image/", tag=image_tag)
 
     store = forensicstore.new(os.path.join(tmp, "input.forensicstore"))
     store.close()
