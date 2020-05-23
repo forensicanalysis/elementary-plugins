@@ -20,7 +20,7 @@ import logging
 import os
 import subprocess
 import sys
-import json
+import tempfile
 
 import forensicstore
 
@@ -47,19 +47,26 @@ class StoreDictKeyPair(argparse.Action):
 def main():
     parser = argparse.ArgumentParser(description='parse key pairs into a dictionary')
     parser.add_argument("--filter", dest="filter", action=StoreDictKeyPair, metavar="type=file,name=System.evtx...")
+    parser.add_argument("forensicstore", help="Input forensicstore")
     args, _ = parser.parse_known_args(sys.argv[1:])
+    url = os.path.join("/store", os.path.basename(args.forensicstore))
 
     if args.filter is None:
-        LOGGER.warning("requires a filter to be set")
-        sys.exit(1)
+        args.filter = [{"type": "file"}]
 
-    store = forensicstore.connect(".")
+    store = forensicstore.open(url)
     files = []
 
-    selected = list(store.select("file", args.filter))
+    tmpdir = tempfile.mkdtemp()
+
+    selected = list(store.select(args.filter))
     for item in selected:
-        if "export_path" in item and os.path.exists(item["export_path"]):
-            files.append(item["export_path"])
+        if "export_path" in item:
+            dst_path = os.path.join(tmpdir, item["export_path"].strip("/"))
+            os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+            with store.load_file(item["export_path"]) as src, open(dst_path, "wb") as dest:
+                dest.write(src.read())
+                files.append(dst_path)
     store.close()
 
     os.makedirs("Plaso", exist_ok=True)
@@ -70,10 +77,9 @@ def main():
 
     # TODO: add logfile to forensicstore
 
-    subprocess.run(["psort.py", "--status_view", "none", "-o", "forensicstore", "-w", "/store/", "Plaso/events.plaso"],
+    subprocess.run(["psort.py", "--status_view", "linear", "-o", "forensicstore", "-w", url, "Plaso/events.plaso"],
                    check=True)
 
 
 if __name__ == '__main__':
-    sys.exit(0)
     main()

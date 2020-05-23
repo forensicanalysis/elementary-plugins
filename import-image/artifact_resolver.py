@@ -29,10 +29,9 @@ from definitions import PartitionInfo
 from dfvfs.path.path_spec import PathSpec
 from dfwinreg.interface import WinRegistryKey
 from forensicstore import ForensicStore
-from misc_utils import get_file_infos, CasePreservingSet
+from misc_utils import get_file_infos, CaseFoldSet
 from os_base import OperatingSystemBase
 from os_unknown import UnknownOS
-
 from pyartifacts import ArtifactDefinition, Registry, ArtifactSource, KnowledgeBase
 from pyartifacts import definitions as artifact_defs
 
@@ -288,14 +287,16 @@ class ArtifactResolver:
                 return []
 
         variable_regex = '(%?%([a-zA-Z0-9_.-]+)%?%)'
-        real_results = CasePreservingSet()  # we do not want the same path in different case
+        real_results = CaseFoldSet()  # we do not want the same path in different case
         for result in results:
             more_vars = re.search(variable_regex, result)
             if result.startswith('C:\\'):
                 LOGGER.debug("Fixing absolute path %s", result)
                 result = result.replace('C:\\', '/').replace('\\', '/')
             if more_vars:
-                real_results.update(self._expand_path(result))
+                paths = self._expand_path(result)
+                for path in paths:
+                    real_results.add(path)
             else:
                 real_results.add(result)
         self.knowledge_cache[key] = real_results
@@ -390,19 +391,19 @@ class ArtifactResolver:
                              dfvfs_utils.reconstruct_full_path(export_file))
                 continue
 
-            store_obj_id = artifact_output.add_file_item(artifact_name, file_infos['name'],
-                                                         created=file_infos.get('created', None),
-                                                         modified=file_infos.get('modified', None),
-                                                         accessed=file_infos.get('accessed', None),
-                                                         origin={
-                                                             'path': file_infos['path'],
-                                                             'partition': self.partition_name
-                                                         },
-                                                         errors=None)
+            store_obj_id = artifact_output.add_file_element(artifact_name, file_infos['name'],
+                                                            created=file_infos.get('created', None),
+                                                            modified=file_infos.get('modified', None),
+                                                            accessed=file_infos.get('accessed', None),
+                                                            origin={
+                                                                'path': file_infos['path'],
+                                                                'partition': self.partition_name
+                                                            },
+                                                            errors=None)
             output_name = f"{self.partition_name}_" \
                           f"{dfvfs_utils.get_relative_path(export_file).replace('/', '_').strip('_')}"
             file_contents = dfvfs_helper.get_file_handle(export_file)
-            with artifact_output.add_file_item_export(store_obj_id, export_name=output_name) as file_export:
+            with artifact_output.add_file_element_export(store_obj_id, export_name=output_name) as file_export:
                 chunk_size = 65536
                 data = file_contents.read(chunk_size)
                 while data:
@@ -452,8 +453,8 @@ class ArtifactResolver:
         else:
             last_write_date = datetime.utcfromtimestamp(0)
         try:
-            key_item_id = store.add_registry_key_item(artifact=artifact, modified=last_write_date,
-                                                      key=key.path, errors=None)
+            key_item_id = store.add_registry_key_element(artifact=artifact, modified=last_write_date,
+                                                         key=key.path, errors=None)
         except TypeError as err:
             LOGGER.exception("Error adding registry key: %s", err)
             return
@@ -475,7 +476,7 @@ class ArtifactResolver:
             #     data = b""
 
             try:
-                store.add_registry_value_item(key_item_id, type_str, value.data, name)
+                store.add_registry_value_element(key_item_id, type_str, value.data, name)
             except sqlite3.OperationalError:
                 LOGGER.exception("Error updating value")
                 continue

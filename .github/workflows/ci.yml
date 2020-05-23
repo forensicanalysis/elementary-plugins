@@ -1,7 +1,7 @@
 name: CI
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
         run: bash test/download_testdata.sh
         shell: bash
       - name: Python Test
-        run: pytest -v --cov-config .coveragerc --cov-report=xml --cov=. .
+        run: pytest -v --cov-config .coveragerc --cov-report=xml --cov=. --ignore=sigma .
         shell: bash
       - name: Upload coverage
         env:
@@ -36,3 +36,9 @@ jobs:
         run: bash <(curl -s https://codecov.io/bash) -f coverage.xml
         # if: matrix.os == 'windows-latest'
         shell: bash
+
+      - name: Upload
+        uses: actions/upload-artifact@master
+        with:
+          name: forensicstore
+          path: ./input.forensicstore

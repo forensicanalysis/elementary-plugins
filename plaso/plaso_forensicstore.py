@@ -69,7 +69,7 @@ class ForensicstoreOutputModule(interface.OutputModule):
             pass
 
         event_json_dict = self._JSON_SERIALIZER.WriteSerializedDict(event)
-        event_json_dict['__container_type__'] = 'event'
+        event_json_dict['__container_type__'] = 'plaso'
 
         event_json_dict.update(event_data_json_dict)
 
@@ -103,7 +103,7 @@ class ForensicstoreOutputModule(interface.OutputModule):
         if not self._filename:
             raise ValueError('Missing filename.')
 
-        self._store = forensicstore.connect(self._filename)
+        self._store = forensicstore.open(self._filename)
 
     def Close(self):
         """Disconnects from the database.

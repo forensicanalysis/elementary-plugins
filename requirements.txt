@@ -1,0 +1,4 @@
+docker
+forensicstore==0.16.0
+sigmatools==0.16.0
+pyyaml==5.3.1

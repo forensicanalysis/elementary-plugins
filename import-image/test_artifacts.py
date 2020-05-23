@@ -24,15 +24,16 @@ import pytest
 
 
 @pytest.fixture
-def data():
+def tmp():
     return mkdata()
 
 
 def mkdata():
     tmpdir = tempfile.mkdtemp()
-    tmpdir = tmpdir.replace("/var/folders", "/private/var/folders") # Required for osx
-    shutil.copytree(os.path.join("test", "data"), os.path.join(tmpdir, "data"))
-    return os.path.join(tmpdir, "data")
+    tmpdir = tmpdir.replace("/var/folders", "/private/var/folders")  # Required for osx
+    os.mkdir(os.path.join(tmpdir, "in"))
+    shutil.copyfile(os.path.join("test", "data", "win10_mock.vhd"), os.path.join(tmpdir, "in", "win10_mock.vhd"))
+    return tmpdir
 
 
 def to_unix_path(p):
@@ -42,36 +43,39 @@ def to_unix_path(p):
     return path_unix
 
 
-def test_docker(data):
+def test_docker(tmp):
     client = docker.from_env()
 
     # build image
     image_tag = "test_artifacts"
-    image, _ = client.images.build(path="config/docker/artifacts/", tag=image_tag)
+    image, _ = client.images.build(path="import-image/", tag=image_tag)
+
+    store = forensicstore.new(os.path.join(tmp, "input.forensicstore"))
+    store.close()
 
     # run image
-    store_path = os.path.abspath(os.path.join(data, "example.forensicstore"))
+    store_path = os.path.abspath(tmp)
     store_path_unix = to_unix_path(store_path)
-    import_path = os.path.abspath(os.path.join(data, "win10_mock.vhd"))
+    import_path = os.path.abspath(os.path.join(tmp, "in"))
     import_path_unix = to_unix_path(import_path)
     volumes = {
         store_path_unix: {'bind': '/store', 'mode': 'rw'},
-        import_path_unix: {'bind': '/transit', 'mode': 'ro'}
+        import_path_unix: {'bind': '/data', 'mode': 'ro'}
     }
-    # plugin_dir: {'bind': '/plugins', 'mode': 'ro'}
-    out = client.containers.run(image_tag, volumes=volumes, stderr=True).decode("ascii")
-    print(out)
+    out = client.containers.run(image_tag, command=["input.forensicstore"], volumes=volumes, stderr=True).decode("ascii")
+    # print(out)
 
     # test results
-    store = forensicstore.connect(store_path)
+    store = forensicstore.open(os.path.join(store_path, "input.forensicstore"))
     items = list(store.all())
     store.close()
 
-    assert len(items) == 8
+    shutil.copyfile(os.path.join(store_path, "input.forensicstore"), "./input.forensicstore")
+    # assert len(items) == 8
 
     # cleanup
     try:
-        shutil.rmtree(data)
+        shutil.rmtree(tmp)
     except PermissionError:
         pass
 

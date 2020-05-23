@@ -29,43 +29,32 @@ import six
 LOGGER = logging.getLogger(__name__)
 
 
-class CasePreservingSet(MutableSet):
-    """ https://stackoverflow.com/questions/27531211/how-to-get-case-insensitive-python-set """
+class CaseFoldSet(MutableSet):
 
     def __init__(self, *values):
-        self._values = {}
-        self._fold = str.casefold  # Python 3
+        self.elements = {}
         for val in values:
             self.add(val)
 
-    def __repr__(self):
-        return '<{}{} at {:x}>'.format(
-            type(self).__name__, tuple(self._values.values()), id(self))
-
     def __contains__(self, value):
-        return self._fold(value) in self._values
+        return str.casefold(value) in self.elements
 
     def __iter__(self):
-        return iter(self._values.values())
+        return iter(self.elements .values())
 
     def __len__(self):
-        return len(self._values)
+        return len(self.elements)
 
     def add(self, value):
         """ Add a value """
-        self._values[self._fold(value)] = value
+        self.elements[str.casefold(value)] = value
 
     def discard(self, value):
         """ Remove a value """
         try:
-            del self._values[self._fold(value)]
+            del self.elements[str.casefold(value)]
         except KeyError:
             pass
-
-    def update(self, values):
-        """ Add multiple values """
-        for value in values:
-            self.add(value)
 
 
 def ensure_dir(path, raise_=False):  # pragma: no cover

@@ -23,7 +23,7 @@ RUN \
     && pip3 install -r requirements.txt
 
 COPY . /app
-ENTRYPOINT ["python3", "/app/main_cmd.py", "-a", "/artifacts", "-o", "/store", "-e", "DefaultEntryPoint", "-i", "/transit"]
+ENTRYPOINT ["python3", "/app/main_cmd.py", "-a", "/artifacts", "--dir", "/store", "-e", "DefaultEntryPoint", "-i", "/data"]
 CMD []
 
-LABEL use="artifacts" short="Import artifacts"
+LABEL use="import-image" short="Import images" mounts="data"

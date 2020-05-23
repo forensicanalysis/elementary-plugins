@@ -32,12 +32,14 @@ import datetime
 import io as sio
 import json
 import logging
+import os
 import struct
 import sys
+import time
 from base64 import b64decode
 
+import argparse
 import forensicstore
-from storeutil import combined_conditions
 
 LOGGER = logging.getLogger(__name__)
 
@@ -85,21 +87,21 @@ def transform(obj):
     return result_obj
 
 
-def main():
-    if len(sys.argv) > 1 and sys.argv[1] == "info":
-        print(json.dumps({"Use": "shimcache", "Short": "Process the shimcache"}))
-        sys.exit(0)
-    store = forensicstore.connect(".")
+def main(url):
+    print(json.dumps({"header": ["Binary Last Modified", "Path"], "template": ""}))
+    store = forensicstore.open(url)
     conditions = [{
         'key':
             "HKEY_LOCAL_MACHINE\\System\\%ControlSet%\\Control\\Session Manager\\AppCompat%"
     }]
-    items = store.select("windows-registry-key", combined_conditions(conditions))
+    items = store.select(conditions)
     for item in items:
         results = transform(item)
         for result in results:
-            store.insert(result)
+            # store.insert(result)
+            print(json.dumps(result))
     store.close()
+
 
 # Values used by Windows 5.2 and 6.0 (Server 2003 through Vista/Server 2008)
 CACHE_MAGIC_NT5_2 = 0xbadc0ffe
@@ -627,4 +629,12 @@ def read_winxp_entries(bin_data):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    parser = argparse.ArgumentParser(description="Process forensic images and extract artifacts")
+    parser.add_argument(
+        "forensicstore",
+        help="Input forensicstore"
+    )
+    my_args, _ = parser.parse_known_args(sys.argv[1:])
+    url = os.path.join("/store", os.path.basename(my_args.forensicstore))
+
+    main(url)

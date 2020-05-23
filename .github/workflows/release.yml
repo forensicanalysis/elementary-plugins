@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    branches: [master]
+  release:
+    types: [published]
+
+jobs:
+  plaso:
+    name: plaso Docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: forensicanalysis/elementary-plaso
+          tag_with_ref: true
+          path: plaso
+
+  importimages:
+    name: import-image Docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: forensicanalysis/elementary-import-image
+          tag_with_ref: true
+          path: import-image
+
+  shimcache:
+    name: shimcache Docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: forensicanalysis/elementary-shimcache
+          tag_with_ref: true
+          path: shimcache
