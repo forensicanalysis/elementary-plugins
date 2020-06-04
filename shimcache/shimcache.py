@@ -581,7 +581,7 @@ def read_winxp_entries(bin_data):
 
             # No size values are included in these entries, so search for utf-16 terminator.
             path_len = bin_data[offset:offset +
-                                       (MAX_PATH + 8)].find("\x00\x00")
+                                       (MAX_PATH + 8)].find(b"\x00\x00")
 
             # if path is corrupt, procede to next entry.
             if path_len == 0:
