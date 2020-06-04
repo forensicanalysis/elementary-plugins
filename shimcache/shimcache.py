@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Copyright (c) 2012 Mandiant
-# Copyright (c) 2019 Siemens AG
+# Copyright (c) 2019-2020 Siemens AG
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -63,10 +63,10 @@ def transform(obj):
                 LOGGER.info("Base64 encoded registry value is deprecated!")
             except ValueError:
                 LOGGER.error("Could not parse shimcache: %s", original_error)
-                return
+                return []
         parsed_cache = read_cache(cache_bin_bytes)
         if not parsed_cache:
-            return
+            return []
         for entry in parsed_cache:
             if entry not in entries:
                 control_set = obj["key"].split('\\')[2]
