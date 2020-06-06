@@ -40,7 +40,11 @@ def main(url, rules_dir):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Process yara rules")
+    parser = argparse.ArgumentParser(prog="elementary run yara", description="Process yara rules", usage=argparse.SUPPRESS)
     parser.add_argument("forensicstore", help="Input forensicstore")
+    parser.add_argument("--rules", help="Input yara rules directory", required=True)
     args, _ = parser.parse_known_args(sys.argv[1:])
+    if not os.path.exists("/rules"):
+        print("no rules given")
+        sys.exit(1)
     main(os.path.join("/store", os.path.basename(args.forensicstore)), "/rules")
