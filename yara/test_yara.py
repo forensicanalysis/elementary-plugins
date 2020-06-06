@@ -77,7 +77,7 @@ def test_docker(tmpdir):
         store_path_unix: {'bind': '/store', 'mode': 'rw'},
         rules_path_unix: {'bind': '/rules', 'mode': 'ro'}
     }
-    out = client.containers.run(image_tag, command=["input.forensicstore"], volumes=volumes, stderr=True)
+    out = client.containers.run(image_tag, command=["input.forensicstore", "--rules", ""], volumes=volumes, stderr=True)
 
     assert out.decode("ascii").count("\n") == 261 + 1
 
