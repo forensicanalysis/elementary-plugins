@@ -192,7 +192,7 @@ def main():
         "System.Channel",
         "System.Provider.Name",
     ]
-    print(json.dumps({"header": header, "template": ""}))
+    print(json.dumps({"header": header}))
 
     parser = argparse.ArgumentParser(description="Process forensic images and extract artifacts")
     parser.add_argument('--debug', dest='debug', action='store_true', default=False)
