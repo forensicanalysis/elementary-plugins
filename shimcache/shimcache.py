@@ -88,7 +88,7 @@ def transform(obj):
 
 
 def main(url):
-    print(json.dumps({"header": ["Binary Last Modified", "Path"], "template": ""}))
+    print(json.dumps({"header": ["Binary Last Modified", "Path"]}))
     store = forensicstore.open(url)
     conditions = [{
         'key':
