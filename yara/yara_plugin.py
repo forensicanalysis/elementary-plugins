@@ -23,12 +23,12 @@ import forensicstore
 import yara
 
 
-def main(url, rules_dir):
+def main():
     paths = {}
-    for rule in os.listdir(rules_dir):
-        paths[rule] = os.path.join(rules_dir, rule)
+    for rule in os.listdir("/elementary/rules"):
+        paths[rule] = os.path.join("/elementary/rules", rule)
     rules = yara.compile(filepaths=paths)
-    store = forensicstore.open(url)
+    store = forensicstore.open("/elementary/input.forensicstore")
 
     print(json.dumps({"header": ["file", "rule"]}))
     for path in store.fs.walk.files():
@@ -40,11 +40,10 @@ def main(url, rules_dir):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(prog="elementary run yara", description="Process yara rules", usage=argparse.SUPPRESS)
-    parser.add_argument("forensicstore", help="Input forensicstore")
-    parser.add_argument("--rules", help="Input yara rules directory", required=True)
-    args, _ = parser.parse_known_args(sys.argv[1:])
-    if not os.path.exists("/rules"):
+    if not os.path.exists("/elementary/input.forensicstore"):
+        print("no forensicstore given")
+        sys.exit(1)
+    if not os.path.exists("/elementary/rules"):
         print("no rules given")
         sys.exit(1)
-    main(os.path.join("/store", os.path.basename(args.forensicstore)), "/rules")
+    main()

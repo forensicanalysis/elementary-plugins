@@ -41,11 +41,11 @@ def test_docker(data):
     image, _ = client.images.build(path="plaso/", tag=image_tag)
 
     # run image
-    store_path = os.path.abspath(data)
+    store_path = os.path.abspath(os.path.join(data, "input.forensicstore"))
     store_path_unix = store_path
     if store_path[1] == ":":
         store_path_unix = "/" + store_path.lower()[0] + store_path[2:].replace("\\", "/")
-    volumes = {store_path_unix: {'bind': '/store', 'mode': 'rw'}}
+    volumes = {store_path_unix: {'bind': '/elementary/input.forensicstore', 'mode': 'rw'}}
     output = client.containers.run(image_tag,
                                    command=["--filter", "artifact=WindowsDeviceSetup", "input.forensicstore"],
                                    volumes=volumes,
@@ -53,7 +53,7 @@ def test_docker(data):
     print(output)
 
     # test results
-    store = forensicstore.open(os.path.join(store_path, "input.forensicstore"))
+    store = forensicstore.open(store_path)
     items = list(store.select([{"type": "event"}]))
     store.close()
     assert len(items) == 69
