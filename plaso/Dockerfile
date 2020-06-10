@@ -18,7 +18,7 @@ FROM log2timeline/plaso:20200227
 
 
 RUN apt-get update && apt-get install -y python3-pip
-RUN pip3 install -v 'forensicstore==0.16.0'
+RUN pip3 install -v 'forensicstore==0.16.1'
 
 RUN echo "from plaso.output import forensicstore" >> /usr/lib/python3/dist-packages/plaso/output/__init__.py
 RUN echo "from plaso.cli.helpers import forensicstore_output" >> /usr/lib/python3/dist-packages/plaso/cli/helpers/__init__.py

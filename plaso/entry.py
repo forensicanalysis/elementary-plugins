@@ -75,8 +75,9 @@ def main():
 
     # TODO: add logfile to forensicstore
 
-    subprocess.run(["psort.py", "--status_view", "linear", "-o", "forensicstore", "-w", "/input.forensicstore", "Plaso/events.plaso"],
-                   check=True)
+    subprocess.run(
+        ["psort.py", "--status_view", "linear", "-o", "forensicstore",
+         "-w", "/input.forensicstore", "Plaso/events.plaso"], check=True)
 
 
 if __name__ == '__main__':

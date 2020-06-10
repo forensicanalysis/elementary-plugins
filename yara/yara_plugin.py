@@ -40,7 +40,10 @@ def main(url, rules_dir):
 
 
 if __name__ == '__main__':
+    if not os.path.exists("/input.forensicstore"):
+        print("no forensicstore given")
+        sys.exit(1)
     if not os.path.exists("/rules"):
         print("no rules given")
         sys.exit(1)
-    main(os.path.join("/input.forensicstore", "/rules"))
+    main("/input.forensicstore", "/rules")

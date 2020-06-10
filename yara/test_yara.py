@@ -69,12 +69,12 @@ def test_docker(tmpdir):
     image, _ = client.images.build(path="yara/", tag=image_tag)
 
     # run image
-    store_path = os.path.abspath(os.path.join(tmpdir))
+    store_path = os.path.abspath(os.path.join(tmpdir, "input.forensicstore"))
     store_path_unix = to_unix_path(store_path)
     rules_path = os.path.abspath(os.path.join(tmpdir, "rules"))
     rules_path_unix = to_unix_path(rules_path)
     volumes = {
-        store_path_unix: {'bind': '/store', 'mode': 'rw'},
+        store_path_unix: {'bind': '/input.forensicstore', 'mode': 'rw'},
         rules_path_unix: {'bind': '/rules', 'mode': 'ro'}
     }
     out = client.containers.run(image_tag, command=["input.forensicstore", "--rules", ""], volumes=volumes, stderr=True)
