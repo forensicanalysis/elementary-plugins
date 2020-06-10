@@ -36,4 +36,4 @@ RUN chmod +x /yara_plugin.py
 WORKDIR /store
 ENTRYPOINT ["python3", "/yara_plugin.py"]
 
-LABEL use="yara" short="Process files with yara" arguments='{"properties":{"rules":{"type":"string","description":"Input yara rules directory"}},"required":["rules"]}' mounts="rules"
+LABEL use="yara" short="Process files with yara" mounts="rules" arguments='{"properties":{"rules":{"type":"string","description":"Input yara rules directory"}},"required":["rules"]}'

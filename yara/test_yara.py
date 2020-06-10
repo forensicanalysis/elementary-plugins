@@ -74,8 +74,8 @@ def test_docker(tmpdir):
     rules_path = os.path.abspath(os.path.join(tmpdir, "rules"))
     rules_path_unix = to_unix_path(rules_path)
     volumes = {
-        store_path_unix: {'bind': '/input.forensicstore', 'mode': 'rw'},
-        rules_path_unix: {'bind': '/rules', 'mode': 'ro'}
+        store_path_unix: {'bind': '/elementary/input.forensicstore', 'mode': 'rw'},
+        rules_path_unix: {'bind': '/elementary/rules', 'mode': 'ro'}
     }
     out = client.containers.run(image_tag, command=["input.forensicstore", "--rules", ""], volumes=volumes, stderr=True)
 
