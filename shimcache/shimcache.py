@@ -98,7 +98,6 @@ def main(url):
     for item in items:
         results = transform(item)
         for result in results:
-            # store.insert(result)
             print(json.dumps(result))
     store.close()
 
@@ -629,12 +628,4 @@ def read_winxp_entries(bin_data):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Process forensic images and extract artifacts")
-    parser.add_argument(
-        "forensicstore",
-        help="Input forensicstore"
-    )
-    my_args, _ = parser.parse_known_args(sys.argv[1:])
-    url = os.path.join("/store", os.path.basename(my_args.forensicstore))
-
-    main(url)
+    main("input.forensicstore")

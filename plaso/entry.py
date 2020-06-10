@@ -47,14 +47,12 @@ class StoreDictKeyPair(argparse.Action):
 def main():
     parser = argparse.ArgumentParser(description='parse key pairs into a dictionary')
     parser.add_argument("--filter", dest="filter", action=StoreDictKeyPair, metavar="type=file,name=System.evtx...")
-    parser.add_argument("forensicstore", help="Input forensicstore")
     args, _ = parser.parse_known_args(sys.argv[1:])
-    url = os.path.join("/store", os.path.basename(args.forensicstore))
 
     if args.filter is None:
         args.filter = [{"type": "file"}]
 
-    store = forensicstore.open(url)
+    store = forensicstore.open("/input.forensicstore")
     files = []
 
     tmpdir = tempfile.mkdtemp()
@@ -77,7 +75,7 @@ def main():
 
     # TODO: add logfile to forensicstore
 
-    subprocess.run(["psort.py", "--status_view", "linear", "-o", "forensicstore", "-w", url, "Plaso/events.plaso"],
+    subprocess.run(["psort.py", "--status_view", "linear", "-o", "forensicstore", "-w", "/input.forensicstore", "Plaso/events.plaso"],
                    check=True)
 
 

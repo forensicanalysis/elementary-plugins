@@ -196,16 +196,13 @@ def main():
 
     parser = argparse.ArgumentParser(description="Process forensic images and extract artifacts")
     parser.add_argument('--debug', dest='debug', action='store_true', default=False)
-    parser.add_argument("forensicstore", help="Input forensicstore")
     args, _ = parser.parse_known_args(sys.argv[1:])
     if not args.debug:
         logging.getLogger().disabled = True
     else:
         logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
-    url = os.path.join("/store", os.path.basename(args.forensicstore))
-
-    analysis = ForensicstoreSigma(url, "/app/config.yaml")
+    analysis = ForensicstoreSigma("/input.forensicstore", "/app/config.yaml")
     statistics = analysis.analyseStore("/rules")
 
     # sum = 0
