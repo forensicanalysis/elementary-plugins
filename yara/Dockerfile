@@ -23,7 +23,8 @@
 FROM alpine:3.12
 
 RUN apk add --no-cache python3-dev python3 git py3-pip build-base
-RUN pip3 install setuptools forensicstore
+ADD requirements.txt /requirements.txt
+RUN pip3 install -r /requirements.txt
 
 RUN git clone --recursive https://github.com/VirusTotal/yara-python
 WORKDIR /yara-python

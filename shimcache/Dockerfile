@@ -16,7 +16,8 @@
 
 FROM python:3.8
 
-RUN pip install -v forensicstore
+ADD requirements.txt /requirements.txt
+RUN pip3 install -r /requirements.txt
 
 ADD shimcache.py /shimcache.py
 RUN chmod +x /shimcache.py
