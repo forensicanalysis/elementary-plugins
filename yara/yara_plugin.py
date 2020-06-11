@@ -14,7 +14,6 @@
 #
 # Author(s): Jonas Plum
 
-import argparse
 import json
 import os
 import sys
@@ -23,10 +22,10 @@ import forensicstore
 import yara
 
 
-def main():
+def main(rules_dir):
     paths = {}
-    for rule in os.listdir("/elementary/rules"):
-        paths[rule] = os.path.join("/elementary/rules", rule)
+    for rule in os.listdir(rules_dir):
+        paths[rule] = os.path.join(rules_dir, rule)
     rules = yara.compile(filepaths=paths)
     store = forensicstore.open("/elementary/input.forensicstore")
 
@@ -43,7 +42,7 @@ if __name__ == '__main__':
     if not os.path.exists("/elementary/input.forensicstore"):
         print("no forensicstore given")
         sys.exit(1)
-    if not os.path.exists("/elementary/rules"):
-        print("no rules given")
-        sys.exit(1)
-    main()
+    if os.path.exists("/elementary/rules"):
+        main("/elementary/rules")
+    else:
+        main("/default_rules")
