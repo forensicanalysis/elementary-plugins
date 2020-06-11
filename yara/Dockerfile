@@ -19,7 +19,6 @@
 #
 # Author(s): Jonas Plum
 
-# FROM blacktop/yara:4.0
 FROM alpine:3.12
 
 RUN apk add --no-cache python3-dev python3 git py3-pip build-base
@@ -31,10 +30,19 @@ WORKDIR /yara-python
 RUN python3 setup.py build
 RUN python3 setup.py install
 
+ADD https://github.com/Neo23x0/signature-base/archive/master.zip /master.zip
+RUN unzip master.zip
+RUN mkdir /default_rules
+RUN mv /signature-base-master/yara/* /default_rules
+RUN rm -f /default_rules/generic_anomalies.yar
+RUN rm -f /default_rules/general_cloaking.yar
+RUN rm -f /default_rules/thor_inverse_matches.yar
+RUN rm -f /default_rules/yara_mixed_ext_vars.yar
+
 ADD yara_plugin.py /yara_plugin.py
 RUN chmod +x /yara_plugin.py
 
 WORKDIR /store
 ENTRYPOINT ["python3", "/yara_plugin.py"]
 
-LABEL use="yara" short="Process files with yara" mounts="rules" arguments='{"properties":{"rules":{"type":"string","description":"Input yara rules directory"}},"required":["rules"]}'
+LABEL use="yara" short="Process files with yara" mounts="rules" arguments='{"properties":{"rules":{"type":"string","description":"Input yara rules directory"}}}'
