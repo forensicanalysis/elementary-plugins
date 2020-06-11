@@ -30,8 +30,9 @@ WORKDIR /yara-python
 RUN python3 setup.py build
 RUN python3 setup.py install
 
+WORKDIR /
 ADD https://github.com/Neo23x0/signature-base/archive/master.zip /master.zip
-RUN unzip master.zip
+RUN unzip /master.zip
 RUN mkdir /default_rules
 RUN mv /signature-base-master/yara/* /default_rules
 RUN rm -f /default_rules/generic_anomalies.yar
