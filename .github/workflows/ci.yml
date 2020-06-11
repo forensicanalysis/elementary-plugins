@@ -6,8 +6,8 @@ on:
 
 jobs:
 
-  docker:
-    name: Docker Plugin Tests
+  pytest:
+    name: Python Test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -42,3 +42,34 @@ jobs:
         with:
           name: forensicstore
           path: ./input.forensicstore
+
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v1
+      - name: Build docker images
+        run: bash test/dev.sh
+      - name: Download testdata
+        run: bash test/download_testdata.sh
+        shell: bash
+      - name: Download forensicworkflows command
+        run: |
+          curl --fail --output ubuntu-latest.zip --location https://github.com/forensicanalysis/forensicworkflows/releases/download/v0.13.1/ubuntu-latest.zip
+          unzip ubuntu-latest.zip
+      - name: run import-image
+        run: ./forensicworkflows run import-image --file test/data/win10_mock.vhd --debug test.forensicstore
+        shell: bash
+      - name: run plaso
+        run: ./forensicworkflows run plaso --format jsonl --debug test.forensicstore
+        shell: bash
+      - name: run shimcache
+        run: ./forensicworkflows run shimcache --format jsonl --debug test.forensicstore
+        shell: bash
+      # - name: run sigma
+      #   run: ./forensicworkflows run sigma --format jsonl --debug test.forensicstore
+      #   shell: bash
+      - name: run yara
+        run: ./forensicworkflows run yara --format jsonl --debug test.forensicstore
+        shell: bash
