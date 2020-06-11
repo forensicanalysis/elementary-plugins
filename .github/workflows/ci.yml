@@ -46,11 +46,14 @@ jobs:
   integration:
     name: Integration Tests
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        plugin: ['import-image', 'plaso', 'shimcache', 'yara'] # sigma
     steps:
       - name: Checkout code
         uses: actions/checkout@v1
       - name: Build docker images
-        run: bash test/dev.sh
+        run: docker build --tag elementary-${{ matrix.plugin }} ${{ matrix.plugin }}
       - name: Download testdata
         run: bash test/download_testdata.sh
         shell: bash
@@ -59,17 +62,10 @@ jobs:
           curl --fail --output ubuntu-latest.zip --location https://github.com/forensicanalysis/forensicworkflows/releases/download/v0.13.1/ubuntu-latest.zip
           unzip ubuntu-latest.zip
       - name: run import-image
-        run: ./forensicworkflows run import-image --file test/data/win10_mock.vhd --debug test.forensicstore
+        run: ./forensicworkflows run import-image --file test/data/win10_mock.vhd --debug test/data/example1.forensicstore
         shell: bash
-      - name: run plaso
-        run: ./forensicworkflows run plaso --format jsonl --debug test.forensicstore
+        if: matrix.plugin == 'import-image'
+      - name: run ${{ matrix.plugin }}
+        run: ./forensicworkflows run ${{ matrix.plugin }} --format jsonl --debug test/data/example1.forensicstore
         shell: bash
-      - name: run shimcache
-        run: ./forensicworkflows run shimcache --format jsonl --debug test.forensicstore
-        shell: bash
-      # - name: run sigma
-      #   run: ./forensicworkflows run sigma --format jsonl --debug test.forensicstore
-      #   shell: bash
-      - name: run yara
-        run: ./forensicworkflows run yara --format jsonl --debug test.forensicstore
-        shell: bash
+        if: matrix.plugin != 'import-image'
