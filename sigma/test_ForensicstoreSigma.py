@@ -151,7 +151,7 @@ class TestGenerateSqlQuery(unittest.TestCase):
         generated_query = "Dummy query"
 
         with patch("yaml.safe_load_all", return_value=[sigma_rule]) as mock_yaml_load:
-            with patch("SQL.SQLBackend.generate", return_value=generated_query) as mock_sql_generate:
+            with patch("sigma.backends.sql.SQLBackend.generate", return_value=generated_query) as mock_sql_generate:
                 # Test for yaml file containing single rule
                 assert self.analysis.generateSqlQuery("any sigma io") == [
                     (generated_query, sigma_rule)]

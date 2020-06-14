@@ -25,12 +25,12 @@ ADD requirements.txt /app/requirements.txt
 RUN pip install -r /app/requirements.txt
 
 WORKDIR /
-ADD https://github.com/Neo23x0/sigma/archive/0.16.0.zip /sigma
+ADD https://github.com/Neo23x0/sigma/archive/0.17.0.zip /sigma
 RUN unzip /sigma
 
 ADD . /app/
 RUN mkdir /rules
-RUN mv /sigma-0.16.0/rules/* /rules
+RUN mv /sigma-0.17.0/rules/* /rules
 
 RUN chmod +x /app/analyse_forensicstore.py
 

@@ -19,7 +19,7 @@
 #
 # Author(s): Jonas Plum
 
-from SQLite import SQLiteBackend
+from sigma.backends.sqlite import SQLiteBackend
 
 
 class ForensicStoreBackend(SQLiteBackend):

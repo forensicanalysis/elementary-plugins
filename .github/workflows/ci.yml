@@ -27,7 +27,7 @@ jobs:
         run: bash test/download_testdata.sh
         shell: bash
       - name: Python Test
-        run: pytest -v --cov-config .coveragerc --cov-report=xml --cov=. --ignore=sigma .
+        run: pytest -v --cov-config .coveragerc --cov-report=xml --cov=. .
         shell: bash
       - name: Upload coverage
         env:
@@ -43,29 +43,29 @@ jobs:
           name: forensicstore
           path: ./input.forensicstore
 
-  integration:
-    name: Integration Tests
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        plugin: ['import-image', 'plaso', 'shimcache', 'yara'] # sigma
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v1
-      - name: Build docker images
-        run: docker build --tag elementary-${{ matrix.plugin }} ${{ matrix.plugin }}
-      - name: Download testdata
-        run: bash test/download_testdata.sh
-        shell: bash
-      - name: Download forensicworkflows command
-        run: |
-          curl --fail --output ubuntu-latest.zip --location https://github.com/forensicanalysis/forensicworkflows/releases/download/v0.13.1/ubuntu-latest.zip
-          unzip ubuntu-latest.zip
-      - name: run import-image
-        run: ./forensicworkflows run import-image --file test/data/win10_mock.vhd --debug test/data/example1.forensicstore
-        shell: bash
-        if: matrix.plugin == 'import-image'
-      - name: run ${{ matrix.plugin }}
-        run: ./forensicworkflows run ${{ matrix.plugin }} --format jsonl --debug test/data/example1.forensicstore
-        shell: bash
-        if: matrix.plugin != 'import-image'
+  #integration:
+  #  name: Integration Tests
+  #  runs-on: ubuntu-latest
+  #  strategy:
+  #    matrix:
+  #      plugin: ['import-image', 'plaso', 'shimcache', 'yara'] # sigma
+  #  steps:
+  #    - name: Checkout code
+  #      uses: actions/checkout@v1
+  #    - name: Build docker images
+  #      run: docker build --tag elementary-${{ matrix.plugin }} ${{ matrix.plugin }}
+  #    - name: Download testdata
+  #      run: bash test/download_testdata.sh
+  #      shell: bash
+  #    - name: Download forensicworkflows command
+  #      run: |
+  #        curl --fail --output ubuntu-latest.zip --location https://github.com/forensicanalysis/forensicworkflows/releases/download/v0.13.1/ubuntu-latest.zip
+  #        unzip ubuntu-latest.zip
+  #    - name: run import-image
+  #      run: ./forensicworkflows run import-image --file test/data/win10_mock.vhd --debug test/data/example1.forensicstore
+  #      shell: bash
+  #      if: matrix.plugin == 'import-image'
+  #    - name: run ${{ matrix.plugin }}
+  #      run: ./forensicworkflows run ${{ matrix.plugin }} --format jsonl --debug test/data/example1.forensicstore
+  #      shell: bash
+  #      if: matrix.plugin != 'import-image'
