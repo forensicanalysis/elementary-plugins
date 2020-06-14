@@ -21,13 +21,25 @@
 
 FROM alpine:3.12
 
-RUN apk add --no-cache python3-dev python3 git py3-pip build-base
+RUN apk add --no-cache python3-dev python3 py3-pip build-base
+RUN apk add --no-cache openssl file jansson bison tini su-exec
+RUN apk add --no-cache -t .build-deps \
+  openssl-dev \
+  jansson-dev \
+  libc-dev \
+  file-dev \
+  automake \
+  autoconf \
+  libtool \
+  flex \
+  git
+
 ADD requirements.txt /requirements.txt
 RUN pip3 install -r /requirements.txt
 
-RUN git clone --recursive https://github.com/VirusTotal/yara-python
+RUN git clone  --branch v4.0.1 --recursive https://github.com/VirusTotal/yara-python
 WORKDIR /yara-python
-RUN python3 setup.py build
+RUN python3 setup.py build --enable-magic --enable-cuckoo --enable-dotnet --enable-dex --enable-macho
 RUN python3 setup.py install
 
 WORKDIR /
