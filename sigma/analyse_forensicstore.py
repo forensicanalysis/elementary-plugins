@@ -202,8 +202,8 @@ def main():
     else:
         logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
-    analysis = ForensicstoreSigma("/input.forensicstore", "/app/config.yaml")
-    statistics = analysis.analyseStore("/rules")
+    analysis = ForensicstoreSigma("/elementary/input.forensicstore", "/app/config.yaml")
+    statistics = analysis.analyseStore("/elementary/rules")
 
     # sum = 0
     # lis = sorted(statistics.errors.values(),

@@ -29,8 +29,8 @@ ADD https://github.com/Neo23x0/sigma/archive/0.17.0.zip /sigma
 RUN unzip /sigma
 
 ADD . /app/
-RUN mkdir /rules
-RUN mv /sigma-0.17.0/rules/* /rules
+RUN mkdir -p /elementary/rules
+RUN mv /sigma-0.17.0/rules/* /elementary/rules
 
 RUN chmod +x /app/analyse_forensicstore.py
 
