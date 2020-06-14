@@ -25,7 +25,8 @@ import yara
 def main(rules_dir):
     paths = {}
     for rule in os.listdir(rules_dir):
-        paths[rule] = os.path.join(rules_dir, rule)
+        if rule.endswith(".yar") or rule.endswith(".yara"):
+            paths[rule] = os.path.join(rules_dir, rule)
     rules = yara.compile(filepaths=paths)
     store = forensicstore.open("/elementary/input.forensicstore")
 

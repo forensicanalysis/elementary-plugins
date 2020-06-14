@@ -25,4 +25,4 @@ RUN chmod +x /shimcache.py
 WORKDIR /store
 ENTRYPOINT ["python", "/shimcache.py"]
 
-LABEL use="shimcache" short="Process the shimcache"
+LABEL short="Process the shimcache"
