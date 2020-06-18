@@ -8,7 +8,7 @@ on:
 
 jobs:
   docker:
-    name: Integration Tests
+    name: Publish Docker
     runs-on: ubuntu-latest
     strategy:
       matrix:
