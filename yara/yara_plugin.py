@@ -35,7 +35,7 @@ def main(rules_dir):
         with store.fs.open(path, mode='rb') as io:
             data = io.read()
             for match in rules.match(data=data):
-                print(json.dumps({"type": "yara", "file": path, "rule": match.rule}))
+                print(json.dumps({"type": "alert", "subtype": "yara", "file": path, "name": match.rule}))
     store.close()
 
 
