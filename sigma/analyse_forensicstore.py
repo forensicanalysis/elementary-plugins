@@ -129,6 +129,7 @@ class ForensicstoreSigma:
                 result = self.store.query(query)
                 for element in result:
                     dic = {"name": rule["title"],
+                           "subtype": "sigma",
                            "level": rule["level"],
                            "type": "alert"}
                     if "System" in element and "TimeCreated" in element["System"] and "SystemTime" in element["System"][
