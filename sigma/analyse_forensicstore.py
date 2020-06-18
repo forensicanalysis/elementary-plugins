@@ -131,13 +131,13 @@ class ForensicstoreSigma:
                     dic = {"name": rule["title"],
                            "level": rule["level"],
                            "type": "alert"}
-                    dic.update(element)
-                    if "System" in dic and "TimeCreated" in dic["System"] and "SystemTime" in dic["System"][
+                    if "System" in element and "TimeCreated" in element["System"] and "SystemTime" in element["System"][
                         "TimeCreated"]:
-                        t = datetime.fromtimestamp(int(dic["System"]["TimeCreated"]["SystemTime"]))
-                        dic["time"] = t.isoformat()
+                        t = datetime.fromtimestamp(int(element["System"]["TimeCreated"]["SystemTime"]))
+                        element["time"] = t.isoformat()
                     if "agg" not in element:
-                        dic["item_ref"] = element["id"]
+                        element["item_ref"] = element["id"]
+                    dic["event"] = element
                     print(json.dumps(dic))
             return True
 
