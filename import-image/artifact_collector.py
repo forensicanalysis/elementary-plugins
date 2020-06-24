@@ -23,14 +23,14 @@ from typing import List
 
 import definitions
 import dfvfs.lib.definitions as dfvfs_defs
-import dfvfs_helper
-import dfvfs_utils
 import forensicstore
 from artifact_resolver import ArtifactResolver
 from definitions import PartitionInfo
 from os_unknown import UnknownOS
 from os_windows import WindowsSystem
 from pyartifacts import Registry
+
+import dfvfs_helper
 
 LOGGER = logging.getLogger(__name__)
 
@@ -42,16 +42,25 @@ class ArtifactExtractor(object):
 
     # pylint: disable=too-few-public-methods
 
-    def __init__(self, source_paths: List[str], url: str, artifact_registry: Registry,
-                 encryption_handler: dfvfs_helper.EncryptionHandler):
+    def __init__(self, source_paths: List[str], output_store: forensicstore.ForensicStore, 
+                 artifact_registry: Registry, encryption_handler: dfvfs_helper.EncryptionHandler,
+                 zip_mode: bool = False):
         self.dfvfs_list = []
         self.artifact_registry = artifact_registry
         self.tmp_dir = None
-        new_source_path = source_paths[0]
-        self.dfvfs_list = [dfvfs_helper.DFVFSHelper(new_source_path, encryption_handler)]
+        self.zip_mode = zip_mode
+        if self.zip_mode:
+            LOGGER.debug("Using special handling for partition zip files")
+            for partition_zip in source_paths:
+                self.dfvfs_list.append(dfvfs_helper.DFVFSHelper(partition_zip, encryption_handler))
+        else:
+            if len(source_paths) != 1:
+                raise ValueError("In normal mode, only one image file can be supplied")
+            new_source_path = source_paths[0]
+            self.dfvfs_list = [dfvfs_helper.DFVFSHelper(new_source_path, encryption_handler)]
         self.encryption_handler = encryption_handler
         # noinspection PyTypeChecker
-        self.store = forensicstore.open(url)
+        self.store = output_store
 
     def clean_up(self):
         """ Called when no more actions will be called in this object """
@@ -69,12 +78,15 @@ class ArtifactExtractor(object):
         """
         real_partitions: List[PartitionInfo] = []
 
-        print("all", list(self.dfvfs_list[0].all_files()))
-
-        # forensic images can have more than one partition, but we always only process one image at a time
-        real_partitions = [PartitionInfo(helper=self.dfvfs_list[0], path_spec=partition, name=chr(ord('c') + i))
-                           for i, partition in enumerate(self.dfvfs_list[0].partitions())
-                           if not dfvfs_utils.is_on_filesystem(partition, dfvfs_defs.TYPE_INDICATOR_VSHADOW)]
+        if self.zip_mode:
+            # zip extract have exactly one partition per dfvfs instance (zip file)
+            real_partitions = [PartitionInfo(helper=d, path_spec=d.partitions()[0], name=chr(ord('c') + i))
+                               for i, d in enumerate(self.dfvfs_list)]
+        else:
+            # forensic images can have more than one partition, but we always only process one image at a time
+            real_partitions = [PartitionInfo(helper=self.dfvfs_list[0], path_spec=partition, name=chr(ord('c') + i))
+                               for i, partition in enumerate(self.dfvfs_list[0].partitions())
+                               if not dfvfs_helper.is_on_filesystem(partition, dfvfs_defs.TYPE_INDICATOR_VSHADOW)]
         LOGGER.info("Found %d partitions", len(real_partitions))
         for partinfo in real_partitions:
             current_os = self._guess_os(partinfo.helper, partinfo.path_spec)
@@ -85,10 +97,10 @@ class ArtifactExtractor(object):
                 elif current_os == definitions.OPERATING_SYSTEM_UNKNOWN:
                     system = UnknownOS()
                     LOGGER.warning("Operating system not detected on partition %s. Only basic extraction possible.",
-                                   dfvfs_utils.reconstruct_full_path(partinfo.path_spec))
+                                   dfvfs_helper.reconstruct_full_path(partinfo.path_spec))
                 else:
                     LOGGER.warning("Operating system %s is not yet supported on %s. Using basic extraction.",
-                                   dfvfs_utils.reconstruct_full_path(partinfo.path_spec), current_os)
+                                   dfvfs_helper.reconstruct_full_path(partinfo.path_spec), current_os)
                     system = UnknownOS()
 
                 LOGGER.info("=== Starting processing of partition")
@@ -100,7 +112,7 @@ class ArtifactExtractor(object):
 
             except RuntimeError as err:
                 LOGGER.exception("Encountered exception during processing of %s: %s",
-                                 dfvfs_utils.reconstruct_full_path(partinfo.path_spec), err)
+                                 dfvfs_helper.reconstruct_full_path(partinfo.path_spec), err)
                 if 'pytest' in sys.modules:
                     raise  # we want to see what exactly is failing when tests are running
 
@@ -125,11 +137,9 @@ class ArtifactExtractor(object):
 
         locations = []
         for path_spec in dfvfs.find_paths(find_specs, partitions=[partition]):
-            path = dfvfs_utils.get_relative_path(path_spec)
+            path = dfvfs_helper.get_relative_path(path_spec)
             if path:
                 locations.append(path.lower().rstrip('/'))
-
-        print("locations", locations)
 
         # We need to check for both forward and backward slashes since the path
         # spec will be OS dependent, as in running the tool on Windows will return

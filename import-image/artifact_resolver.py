@@ -24,7 +24,6 @@ from typing import List, Tuple, Optional, Iterable, Dict
 
 import dfvfs.lib.definitions as dfvfs_defs
 import dfvfs_helper
-import dfvfs_utils
 from definitions import PartitionInfo
 from dfvfs.path.path_spec import PathSpec
 from dfwinreg.interface import WinRegistryKey
@@ -193,11 +192,11 @@ class ArtifactResolver:
         # paths are added as strings
         # .. as are directories (should not be source-provides, but might happen)
         for path in resolved.paths + resolved.dirs:
-            path_str = dfvfs_utils.get_relative_path(path)
+            path_str = dfvfs_helper.get_relative_path(path)
             results.add(path_str)
         # for files, we want the content (line based)
         for filename in resolved.files:
-            handle = dfvfs_utils.get_file_handle(filename)
+            handle = dfvfs_helper.get_file_handle(filename)
             results.add(''.join(handle.readlines()))
             handle.close()
         LOGGER.debug('Resolved to: %s', results)
@@ -383,14 +382,20 @@ class ArtifactResolver:
             file_infos = get_file_infos(export_file)
             if not file_infos:
                 LOGGER.warning("Could not get file infos for \"%s\". Skipping",
-                               dfvfs_utils.reconstruct_full_path(export_file))
+                               dfvfs_helper.reconstruct_full_path(export_file))
                 continue
 
             if file_infos['type'] != dfvfs_defs.FILE_ENTRY_TYPE_FILE:
                 LOGGER.debug("Not exporting entry of wrong type: %s",
-                             dfvfs_utils.reconstruct_full_path(export_file))
+                             dfvfs_helper.reconstruct_full_path(export_file))
                 continue
 
+            file_contents = dfvfs_helper.get_file_handle(export_file)
+            if not file_contents:
+                LOGGER.warning("Could not get file contents for \"%s\"",
+                               dfvfs_helper.reconstruct_full_path(export_file))
+                success = False
+                continue
             store_obj_id = artifact_output.add_file_element(artifact_name, file_infos['name'],
                                                             created=file_infos.get('created', None),
                                                             modified=file_infos.get('modified', None),
@@ -401,8 +406,7 @@ class ArtifactResolver:
                                                             },
                                                             errors=None)
             output_name = f"{self.partition_name}_" \
-                          f"{dfvfs_utils.get_relative_path(export_file).replace('/', '_').strip('_')}"
-            file_contents = dfvfs_helper.get_file_handle(export_file)
+                          f"{dfvfs_helper.get_relative_path(export_file).replace('/', '_').strip('_')}"
             with artifact_output.add_file_element_export(store_obj_id, export_name=output_name) as file_export:
                 chunk_size = 65536
                 data = file_contents.read(chunk_size)
@@ -468,6 +472,7 @@ class ArtifactResolver:
             type_str = value.data_type_string
             if type_str == 'REG_DWORD_LE':
                 type_str = 'REG_DWORD'
+            # TODO: Check if this is correctly handled by the library now
             # if value.data and (value.DataIsBinaryData() or value.data_type_string == "REG_NONE"):
             #     data = value.data
             # elif value.data:

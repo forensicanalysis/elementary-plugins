@@ -30,7 +30,7 @@ from dfvfs.helpers import volume_scanner, file_system_searcher
 from dfvfs.resolver import resolver
 import pybde
 
-from dfvfs_utils import get_file_handle
+from .dfvfs_utils import get_file_handle
 
 LOGGER = logging.getLogger(__name__)
 

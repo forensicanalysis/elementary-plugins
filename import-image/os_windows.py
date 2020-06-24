@@ -19,7 +19,7 @@ import logging
 import os.path
 import re
 
-import dfvfs_utils
+import dfvfs_helper
 from dfwinreg import regf as regfile_impl
 from dfwinreg import registry as dfwinreg_reg
 from dfwinreg.interface import WinRegistryFileReader
@@ -67,6 +67,7 @@ class RegistryFileOpener(WinRegistryFileReader):
             return None
 
         # check for variables and if we know them
+        realpath = path
         for match in re.finditer('%[a-zA-Z0-9_]+%', path):
             key = match.group(0)
             val = self.windows_system.get_var(key)
@@ -76,6 +77,7 @@ class RegistryFileOpener(WinRegistryFileReader):
                 LOGGER.warning("Could not resolve variable %s", key)
                 return None
 
+        realpath = realpath.replace('\\', '/')
         if realpath.lower().startswith('c:/'):  # catch absolute paths
             realpath = '/' + realpath[3:]
         if not realpath[0] == '/':
@@ -92,11 +94,11 @@ class RegistryFileOpener(WinRegistryFileReader):
             return None
         if len(path_specs) > 1:
             LOGGER.warning("Found multiple registry hives for query %s, using %s",
-                           path, dfvfs_utils.reconstruct_full_path(path_specs[0]))
+                           path, dfvfs_helper.reconstruct_full_path(path_specs[0]))
 
         # extract the file locally
         filename = realpath.replace('/', '_')
-        dfvfs_utils.export_file(path_specs[0], self.tmpfs, filename)
+        dfvfs_helper.export_file(path_specs[0], self.tmpfs, filename)
 
         try:
             file_object = self.tmpfs.open(filename, 'rb')
@@ -128,7 +130,7 @@ class WindowsSystem(OperatingSystemBase):
         self.partition = partition
 
         LOGGER.info("Creating new WindowsSystem for %s",
-                    dfvfs_utils.reconstruct_full_path(partition))
+                    dfvfs_helper.reconstruct_full_path(partition))
 
         self.users = {}
         self.vars = {}
@@ -251,11 +253,11 @@ class WindowsSystem(OperatingSystemBase):
             self.dfvfs.find_paths(['/Windows', '/WINNT'], partitions=[self.partition]))
         if not systemroot:
             raise RuntimeError("No windows directory found on %s" % (
-                dfvfs_utils.reconstruct_full_path(self.partition)))
+                dfvfs_helper.reconstruct_full_path(self.partition)))
         if len(systemroot) > 1:
             LOGGER.warning("More than one installation of Windows detected? Using %s",
-                           dfvfs_utils.reconstruct_full_path(systemroot[0]))
-        path_str = dfvfs_utils.get_relative_path(systemroot[0])
+                           dfvfs_helper.reconstruct_full_path(systemroot[0]))
+        path_str = dfvfs_helper.get_relative_path(systemroot[0])
         self.set_var("%SystemRoot%", path_str)
 
         # %SystemDrive% is always '/'
