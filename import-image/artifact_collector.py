@@ -116,7 +116,6 @@ class ArtifactExtractor(object):
                 if 'pytest' in sys.modules:
                     raise  # we want to see what exactly is failing when tests are running
 
-        self.store.close()
 
     @staticmethod
     def _guess_os(dfvfs, partition):

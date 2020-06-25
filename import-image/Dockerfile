@@ -29,7 +29,7 @@ RUN apt-get -y update \
 RUN rm -rf data /artifacts artifacts.zip artifacts.tar.gz \
     && curl --fail --silent --output artifacts.zip --location https://github.com/forensicanalysis/artifacts/archive/v0.6.1.zip \
     && unzip artifacts.zip \
-	&& mkdir /artifacts \
+    && mkdir /artifacts \
     && mv -fv artifacts-0.6.1/*.yaml /artifacts/
 
 COPY artifacts.yaml /artifacts/artifacts.yaml
@@ -47,4 +47,5 @@ COPY . /app
 ENTRYPOINT ["python3", "/app/main_cmd.py"]
 CMD ["-a", "/artifacts", "--dir", "/store", "-e", "DefaultEntryPoint", "-i", "/data"]
 
-LABEL short="Import images" mounts="data"
+
+LABEL short="Import images" mounts="input_dir,artifacts_dir" arguments='{"properties": {"artifacts_dir": {"type": "string","description": "Directory with artifact definitions"},"input_dir": {"type": "string","description": "Directory containing input image data"},"input_file": {"type": "string","description": "Filename of input image (relative to input_dir)"},"artifact": {"type": "string","description": "Artifact(s) to extract, comma-separated"}}}'

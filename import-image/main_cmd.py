@@ -40,7 +40,7 @@ def parse_args():
     )
     parser.add_argument(
         "-a",
-        "--artifacts-path",
+        "--artifacts_dir",
         default='artifacts',
         dest="artifacts_path",
         help="Path where to search for artifact definitions"
@@ -54,27 +54,67 @@ def parse_args():
     parser.add_argument(
         "-d",
         "--dir",
-        dest="output_dir",
+        dest="output_store",
         help="Output forensicstore"
     )
     parser.add_argument(
         "-e",
-        "--extract",
-        nargs='+',
+        "--artifact",
         dest="artifact_names",
         help="Which artifact to extract"
     )
     parser.add_argument(
         "-i",
-        "--input",
+        "--input_file",
         nargs='+',
         dest="input_evidence",
         help="Input file(s) (or folders) to process"
     )
+    parser.add_argument(
+        "--input_dir",
+        dest="input_evidence_dir",
+        help="Input folder root path. If given, --input_file is relative to this"
+    )
     parser.add_argument('-v', '--verbose', action='count', default=0)
     my_args, _ = parser.parse_known_args(sys.argv[1:])
-    if not all([my_args.input_evidence, my_args.artifact_names]):
-        parser.error("The following arguments are required: -e/--extract, -i/--input")
+
+    # if we are running as an elementary worker, some paths
+    # are hard-coded
+    if os.path.exists('/elementary'):
+        # input is always mounted
+        my_args.input_evidence_dir = '/elementary/input_dir'
+
+        # output is also fixed
+        options = ('/elementary/input.forensicstore', '/elementary/input')
+        for o in options:
+            if os.path.exists(o):
+                my_args.output_store = o
+                break
+
+        # if artifacts are mounted, use those
+        # else, use the built-in artifacts
+        if os.path.isdir('/elementary/artifacts_dir'):
+            my_args.artifacts_path = '/elementary/artifacts_dir'
+        else:
+            my_args.artifacts_path = '/artifacts'
+
+        # TODO: maybe take this out again or make configurable
+        my_args.verbose = 3
+
+    # take care of comma-separated input values
+    all_inputs = []
+    for input_file in my_args.input_evidence:
+        if ',' in input_file:
+            all_inputs.extend(i.strip() for i in input_file.split(','))
+        else:
+            all_inputs.append(input_file)
+    my_args.input_evidence = all_inputs
+
+    # build absolute paths if input_evidence_dir is set
+    if my_args.input_evidence_dir:
+        my_args.input_evidence = [os.path.join(my_args.input_evidence_dir, i)
+                                  for i in my_args.input_evidence]
+
     return my_args
 
 
@@ -86,8 +126,6 @@ class ArtifactExtractionCommand:
         self.artifact_registry.read_folder(args.artifacts_path)
         if not self.artifact_registry.artifacts:
             LOGGER.warning("Could not read any artifact definition from %s", args.artifacts_path)
-        artifact_names = list([a.name for a in self.artifact_registry.artifacts.values()])
-        artifact_names.sort()
         self.args = args
 
     def run(self):
@@ -98,17 +136,16 @@ class ArtifactExtractionCommand:
                 encryption_keys = encryption_handlers.read_key_list(keyfile)
 
         extractor = None
-        # find the store file inside the input directory
-        files = sorted(os.listdir(self.args.output_dir))
-        store_file = next(f for f in files if os.path.isfile(os.path.join(self.args.output_dir, f)))
-        store_file = os.path.join(self.args.output_dir, store_file)
+        
+        store_file = self.args.output_store
         print("Using output forensicstore:", store_file)
         store = forensicstore.open(store_file)
         try:
             handler = encryption_handlers.ConsoleEncryptionHandler(encryption_keys)
             extractor = ArtifactExtractor(self.args.input_evidence, store,
                                           self.artifact_registry, handler, self.args.zip_mode)
-            for artifact in self.args.artifact_names:
+            to_extract = [a.strip() for a in self.args.artifact_names.split(',')]
+            for artifact in to_extract:
                 print("Extract %s" % artifact)
                 extractor.extract_artifact(artifact)
         except Exception as error:
