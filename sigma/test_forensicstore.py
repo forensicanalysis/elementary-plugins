@@ -120,7 +120,7 @@ class TestFullTextSearch(unittest.TestCase):
         # all
         detection = {"selection": {"fieldname|all": ["test1", "test2"]}, "condition": "selection"}
         expected_result = 'SELECT json FROM {} WHERE json_extract(json, \'$.type\') = \'eventlog\' ' \
-                          'and (json_extract(json, \'$.fieldname\') = "test1" ' \
+                          'AND (json_extract(json, \'$.fieldname\') = "test1" ' \
                           'AND json_extract(json, \'$.fieldname\') = "test2")'.format(self.table)
         self.validate(detection, expected_result)
 
@@ -316,45 +316,45 @@ class TestFullTextSearch(unittest.TestCase):
         detection = {"selection": ["test1"], "condition": "selection"}
         expected_result = 'SELECT json FROM {0} ' \
                           'WHERE json_extract(json, \'$.type\') = \'eventlog\' ' \
-                          'AND {0} MATCH (\'"test1"\')'.format(self.table)
+                          'AND json LIKE "%test1%"'.format(self.table)
         self.validate(detection, expected_result)
 
         detection = {"selection": [5], "condition": "selection"}
         expected_result = 'SELECT json FROM {0} ' \
                           'WHERE json_extract(json, \'$.type\') = \'eventlog\' ' \
-                          'AND {0} MATCH (\'"5"\')'.format(self.table)
+                          'AND json LIKE "%5%"'.format(self.table)
         self.validate(detection, expected_result)
 
         detection = {"selection": ["test1", "test2"], "condition": "selection"}
         expected_result = 'SELECT json FROM {0} ' \
                           'WHERE json_extract(json, \'$.type\') = \'eventlog\' ' \
-                          'AND ({0} MATCH (\'"test1" OR "test2"\'))'.format(self.table)
+                          'AND (json LIKE "%test1%" OR json LIKE "%test2%")'.format(self.table)
         self.validate(detection, expected_result)
 
         detection = {"selection": ["test1"], "filter": ["test2"], "condition": "selection and filter"}
         expected_result = 'SELECT json FROM {0} ' \
                           'WHERE json_extract(json, \'$.type\') = \'eventlog\' ' \
-                          'AND ({0} MATCH (\'"test1" and "test2"\'))'.format(self.table)
+                          'AND (json LIKE "%test1%" AND json LIKE "%test2%")'.format(self.table)
         self.validate(detection, expected_result)
 
         detection = {"selection": [5, 6], "condition": "selection"}
         expected_result = 'SELECT json FROM {0} ' \
                           'WHERE json_extract(json, \'$.type\') = \'eventlog\' ' \
-                          'AND ({0} MATCH (\'"5" OR "6"\'))'.format(self.table)
+                          'AND (json LIKE "%5%" OR json LIKE "%6%")'.format(self.table)
         self.validate(detection, expected_result)
 
         detection = {"selection": ["test1"], "filter": [
             "test2"], "condition": "selection or filter"}
         expected_result = 'SELECT json FROM {0} ' \
                           'WHERE json_extract(json, \'$.type\') = \'eventlog\' ' \
-                          'AND ({0} MATCH (\'"test1" OR "test2"\'))'.format(self.table)
+                          'AND (json LIKE "%test1%" OR json LIKE "%test2%")'.format(self.table)
         self.validate(detection, expected_result)
 
         detection = {"selection": ["test1"], "filter": [
             "test2"], "condition": "selection and filter"}
         expected_result = 'SELECT json FROM {0} ' \
                           'WHERE json_extract(json, \'$.type\') = \'eventlog\' ' \
-                          'AND ({0} MATCH (\'"test1" and "test2"\'))'.format(self.table)
+                          'AND (json LIKE "%test1%" AND json LIKE "%test2%")'.format(self.table)
         self.validate(detection, expected_result)
 
     def test_full_text_search_aggregation(self):
@@ -362,14 +362,14 @@ class TestFullTextSearch(unittest.TestCase):
         detection = {"selection": ["test"],
                      "condition": "selection | count() > 5"}
         inner_query = 'SELECT count(*) AS agg FROM {0} ' \
-                      'WHERE {0} MATCH (\'"test"\')'.format(self.table)
+                      'WHERE json LIKE "%test%"'.format(self.table)
         expected_result = 'SELECT json FROM ({}) WHERE agg > 5'.format(inner_query)
         self.validate(detection, expected_result)
 
         detection = {"selection": ["test1", "test2"],
                      "condition": "selection | count() > 5"}
         inner_query = 'SELECT count(*) AS agg FROM {0} ' \
-                      'WHERE ({0} MATCH (\'"test1" or "test2"\'))'.format(self.table)
+                      'WHERE (json LIKE "%test1%" OR json LIKE "%test2%")'.format(self.table)
         expected_result = 'SELECT json FROM ({}) WHERE agg > 5'.format(inner_query)
         self.validate(detection, expected_result)
 
@@ -377,7 +377,7 @@ class TestFullTextSearch(unittest.TestCase):
         detection = {"selection": ["test1", "test2"],
                      "condition": "selection | count() by fieldname > 5"}
         inner_query = 'SELECT count(*) AS agg FROM {0} ' \
-                      'WHERE ({0} MATCH (\'"test1" or "test2"\')) GROUP BY fieldname'.format(self.table)
+                      'WHERE (json LIKE "%test1%" OR json LIKE "%test2%") GROUP BY fieldname'.format(self.table)
         expected_result = 'SELECT json FROM ({}) WHERE agg > 5'.format(inner_query)
         self.validate(detection, expected_result)
 
@@ -402,17 +402,23 @@ class TestFullTextSearch(unittest.TestCase):
             "test2"], "condition": "selection or filter"}  # this is ok
         detection = {"selection": ["test"], "filter": [
             "test2"], "condition": "selection and not filter"}  # this is already nested
-        expected_result = NotImplementedError()
+        expected_result = "SELECT json FROM elements " \
+                          "WHERE json_extract(json, '$.type') = 'eventlog' " \
+                          "AND (json LIKE \"%test%\" AND NOT (json LIKE \"%test2%\"))"
         self.validate(detection, expected_result)
 
         detection = {"selection": ["test"], "filter": [
             "test2"], "condition": "selection and filter and filter"}  # this is nested
-        expected_result = NotImplementedError()
+        expected_result = "SELECT json FROM elements " \
+                          "WHERE json_extract(json, '$.type') = 'eventlog' " \
+                          "AND ((json LIKE \"%test%\" AND json LIKE \"%test2%\") AND json LIKE \"%test2%\")"
         self.validate(detection, expected_result)
 
         detection = {"selection": ["test"], "filter": [
             "test2"], "condition": "selection and filter or filter"}  # this is nested
-        expected_result = NotImplementedError()
+        expected_result = "SELECT json FROM elements " \
+                          "WHERE json_extract(json, '$.type') = 'eventlog' " \
+                          "AND ((json LIKE \"%test%\" AND json LIKE \"%test2%\") OR json LIKE \"%test2%\")"
         self.validate(detection, expected_result)
 
     def validate(self, detection, expectation):
