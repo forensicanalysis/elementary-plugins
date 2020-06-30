@@ -20,6 +20,7 @@
 # Author(s): Jonas Plum
 
 from sigma.backends.sqlite import SQLiteBackend
+import re
 
 
 class ForensicStoreBackend(SQLiteBackend):
@@ -35,6 +36,8 @@ class ForensicStoreBackend(SQLiteBackend):
     mapWildcard = "json_extract(json, '$.%s') LIKE %s ESCAPE \'\\\'"
     # Syntax for sourcetype
     mapSource = "json_extract(json, '$.%s')=%s"
+
+    mapFullTextSearch = "json LIKE %%%s%%"
 
     def __init__(self, sigmaconfig):
         super().__init__(sigmaconfig, "elements")
@@ -52,6 +55,13 @@ class ForensicStoreBackend(SQLiteBackend):
         if parsed.parsedAgg:
             # Handle aggregation
             fro, whe = self.generateAggregation(parsed.parsedAgg, result)
-            return "Select json From {} Where {}".format(fro, whe)
+            return "SELECT json FROM {} WHERE {}".format(fro, whe)
 
-        return "Select json From elements Where json_extract(json, '$.type') = 'eventlog' and {}".format(result)
+        return "SELECT json FROM elements WHERE json_extract(json, '$.type') = 'eventlog' AND {}".format(result)
+
+    def generateFTS(self, value):
+        if re.search(r"((\\(\*|\?|\\))|\*|\?|_|%)", value):
+            raise NotImplementedError(
+                "Wildcards in SQlite Full Text Search not implemented")
+        self.countFTS += 1
+        return self.mapFullTextSearch % value
