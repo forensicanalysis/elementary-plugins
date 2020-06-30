@@ -19,6 +19,8 @@
 #
 # Author(s): Jonas Plum
 
+import re
+
 from sigma.backends.sqlite import SQLiteBackend
 
 
@@ -36,22 +38,51 @@ class ForensicStoreBackend(SQLiteBackend):
     # Syntax for sourcetype
     mapSource = "json_extract(json, '$.%s')=%s"
 
+    mapFullTextSearch = "json LIKE \"%%%s%%\""
+
     def __init__(self, sigmaconfig):
         super().__init__(sigmaconfig, "elements")
         self.mappingItem = False
 
     def generateQuery(self, parsed):
-        self.countFTS = 0
         result = self.generateNode(parsed.parsedSearch)
-        if self.countFTS > 1:
-            msg = "Match operator ({}) is allowed only once in SQLite, " \
-                  "parse rule in a different way:\n{}".format(self.countFTS, result)
-            raise NotImplementedError(msg)
-        self.countFTS = 0
-
         if parsed.parsedAgg:
             # Handle aggregation
             fro, whe = self.generateAggregation(parsed.parsedAgg, result)
-            return "Select json From {} Where {}".format(fro, whe)
+            return "SELECT json FROM {} WHERE {}".format(fro, whe)
 
-        return "Select json From elements Where json_extract(json, '$.type') = 'eventlog' and {}".format(result)
+        return "SELECT json FROM elements WHERE json_extract(json, '$.type') = 'eventlog' AND {}".format(result)
+
+    def generateFTS(self, value):
+        if re.search(r"((\\(\*|\?|\\))|\*|\?|_|%)", value):
+            raise NotImplementedError(
+                "Wildcards in SQlite Full Text Search not implemented")
+        return self.mapFullTextSearch % value
+
+    def generateANDNode(self, node):
+
+        if self.requireFTS(node):
+            fts = self.andToken.join(self.generateFTS(self.cleanValue(val))
+                                     for val in node)
+            return fts
+
+        generated = [self.generateNode(val) for val in node]
+        filtered = [g for g in generated if g is not None]
+        if filtered:
+            return self.andToken.join(filtered)
+        else:
+            return None
+
+    def generateORNode(self, node):
+
+        if self.requireFTS(node):
+            fts = self.orToken.join(self.generateFTS(self.cleanValue(val))
+                                    for val in node)
+            return fts
+
+        generated = [self.generateNode(val) for val in node]
+        filtered = [g for g in generated if g is not None]
+        if filtered:
+            return self.orToken.join(filtered)
+        else:
+            return None
