@@ -17,7 +17,7 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
-# Author(s): Jonas Plum
+# Author(s): Jonas Plum, Demian Kellermann
 
 FROM log2timeline/plaso:20200227
 
@@ -48,4 +48,4 @@ ENTRYPOINT ["python3", "/app/main_cmd.py"]
 CMD ["-a", "/artifacts", "--dir", "/store", "-e", "DefaultEntryPoint", "-i", "/data"]
 
 
-LABEL short="Import images" mounts="input_dir,artifacts_dir" arguments='{"properties": {"artifacts_dir": {"type": "string","description": "Directory with artifact definitions"},"input_dir": {"type": "string","description": "Directory containing input image data"},"input_file": {"type": "string","description": "Filename of input image (relative to input_dir)"},"artifact": {"type": "string","description": "Artifact(s) to extract, comma-separated"}}}'
+LABEL short="Import images" mounts="input_dir,artifacts_dir" arguments='{"properties": {"artifacts_dir": {"type": "string","description": "Directory with artifact definitions"},"input_dir": {"type": "string","description": "Directory containing input image data"},"input_file": {"type": "string","description": "Filename of input image (relative to input_dir)"},"artifact": {"type": "string","description": "Artifact(s) to extract, comma-separated"}, "partition_zips": {"type": "boolean", "description": "Process multiple zip archives as if they were partitions"}, "verbose": {"type": "boolean", "description": "Enable verbose logging"}, "keyfile": {"type": "string", "description": "Filename of decryption keys to use (relative to input_dir)"}}, "required": ["input_dir", "input_file"]}'

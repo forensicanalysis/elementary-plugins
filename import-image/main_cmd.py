@@ -47,7 +47,7 @@ def parse_args():
     )
     parser.add_argument(
         "-k",
-        "--keys",
+        "--keyfile",
         dest="keyfile",
         help="Keyfile for decryption"
     )
@@ -84,6 +84,11 @@ def parse_args():
         # input is always mounted
         my_args.input_evidence_dir = '/elementary/input_dir'
 
+        # if there's a keyfile supplied, it should be relative to input
+        if my_args.keyfile:
+            my_args.keyfile = os.path.join(my_args.input_evidence_dir,
+                                           my_args.keyfile)
+
         # output is also fixed
         options = ('/elementary/input.forensicstore', '/elementary/input')
         for o in options:
@@ -98,8 +103,6 @@ def parse_args():
         else:
             my_args.artifacts_path = '/artifacts'
 
-        # TODO: maybe take this out again or make configurable
-        my_args.verbose = 3
 
     # take care of comma-separated input values
     all_inputs = []
@@ -132,8 +135,11 @@ class ArtifactExtractionCommand:
         # do we have a key list for decryption?
         encryption_keys = []
         if self.args.keyfile:
-            with open(self.args.keyfile, 'r') as keyfile:
-                encryption_keys = encryption_handlers.read_key_list(keyfile)
+            try:
+                with open(self.args.keyfile, 'r') as keyfile:
+                    encryption_keys = encryption_handlers.read_key_list(keyfile)
+            except OSError as err:
+                LOGGER.error("Could not open key file: %s", err.strerror)
 
         extractor = None
         
