@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 # Author(s): Demian Kellermann
-""" Package to ease use of dfvfs in SiERRA workers """
+""" Package to ease use of dfvfs """
 
 from .dfvfs_helper import DFVFSHelper, EncryptionHandler
 from .dfvfs_utils import reconstruct_full_path, is_on_filesystem, get_file_handle, get_relative_path, \

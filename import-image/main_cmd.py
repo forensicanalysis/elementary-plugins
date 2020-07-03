@@ -103,6 +103,10 @@ def parse_args():
         else:
             my_args.artifacts_path = '/artifacts'
 
+        # if no entry artifacts are given, use the default
+        if not my_args.artifact_names:
+            my_args.artifact_names = 'DefaultEntryPoint'
+
 
     # take care of comma-separated input values
     all_inputs = []
