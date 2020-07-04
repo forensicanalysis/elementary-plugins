@@ -17,7 +17,7 @@
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
-# Author(s): Jonas Plum
+# Author(s): Jonas Plum, Demian Kellermann
 
 FROM log2timeline/plaso:20200227
 
@@ -27,13 +27,10 @@ RUN apt-get -y update \
     && rm -rf /var/cache/apt/* /var/lib/apt/lists/*
 
 RUN rm -rf data /artifacts artifacts.zip artifacts.tar.gz \
-    && curl --fail --silent --output artifacts.zip --location https://github.com/forensicanalysis/artifacts/archive/v0.6.1.zip \
+    && curl --fail --silent --output artifacts.zip --location https://github.com/forensicanalysis/artifacts/archive/v0.6.4.zip \
     && unzip artifacts.zip \
-	&& mkdir /artifacts \
-    && mv -fv artifacts-0.6.1/*.yaml /artifacts/
-
-COPY artifacts.yaml /artifacts/artifacts.yaml
-COPY for500.yaml /artifacts/for500.yaml
+    && mkdir /artifacts \
+    && mv -fv artifacts-0.6.4/*.yaml /artifacts/
 
 COPY requirements.txt .
 RUN \
@@ -44,7 +41,6 @@ RUN \
     && pip3 install -r requirements.txt
 
 COPY . /app
-ENTRYPOINT ["python3", "/app/main_cmd.py", "-a", "/artifacts", "--dir", "/store", "-e", "DefaultEntryPoint", "-i", "/data"]
-CMD []
+ENTRYPOINT ["python3", "/app/main_cmd.py"]
 
-LABEL short="Import images" mounts="data"
+LABEL short="Import images" mounts="input_dir,artifacts_dir" arguments='{"properties": {"artifacts_dir": {"type": "string","description": "Directory with artifact definitions"},"input_dir": {"type": "string","description": "Directory containing input image data"},"input_file": {"type": "string","description": "Filename of input image (relative to input_dir)"},"artifact": {"type": "string","description": "Artifact(s) to extract, comma-separated"}, "partition_zips": {"type": "boolean", "description": "Process multiple zip archives as if they were partitions"}, "verbose": {"type": "boolean", "description": "Enable verbose logging"}, "keyfile": {"type": "string", "description": "Filename of decryption keys to use (relative to input_dir)"}}, "required": ["input_dir", "input_file"]}'

@@ -19,7 +19,7 @@
 import logging
 import sys
 
-import unicodecsv as csv
+import csv
 from dfvfs_helper import EncryptionHandler
 
 LOGGER = logging.getLogger(__name__)

@@ -23,7 +23,7 @@ import os.path
 from collections.abc import MutableSet
 from datetime import datetime
 
-import dfvfs_utils
+import dfvfs_helper
 import six
 
 LOGGER = logging.getLogger(__name__)
@@ -88,7 +88,7 @@ def get_file_infos(path_spec):
     :return: dict
     """
 
-    file_entry = dfvfs_utils.pathspec_to_fileentry(path_spec)
+    file_entry = dfvfs_helper.pathspec_to_fileentry(path_spec)
     stat = file_entry.GetStat()
     if not stat:
         LOGGER.warning("Could not get stat object for %s", file_entry.name)
@@ -108,6 +108,6 @@ def get_file_infos(path_spec):
 
     # the path is not part of STIX 2.0 for file objects, but is very useful to have,
     # so we make it a custom attribute
-    entry["path"] = path_spec.location
+    entry["path"] = path_spec.location.replace('\\', '/')
 
     return entry

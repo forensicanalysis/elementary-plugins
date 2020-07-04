@@ -52,7 +52,7 @@ def reconstruct_full_path(entry):
             newpath = '/' + getattr(curr, 'type_indicator', '')
         path = newpath + path
         curr = getattr(curr, 'parent', None)
-    return path.rstrip('/')
+    return path.replace('\\', '/').rstrip('/')
 
 
 def is_on_filesystem(entry, filesystem):
@@ -79,7 +79,7 @@ def get_relative_path(path_spec):
     :return: [str] representation of the relative path of the element within the innermost container
     """
     try:
-        return path_spec.location.rstrip('/')
+        return path_spec.location.replace('\\', '/').rstrip('/')
     except AttributeError:
         return None
 
