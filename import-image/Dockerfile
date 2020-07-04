@@ -27,13 +27,10 @@ RUN apt-get -y update \
     && rm -rf /var/cache/apt/* /var/lib/apt/lists/*
 
 RUN rm -rf data /artifacts artifacts.zip artifacts.tar.gz \
-    && curl --fail --silent --output artifacts.zip --location https://github.com/forensicanalysis/artifacts/archive/v0.6.1.zip \
+    && curl --fail --silent --output artifacts.zip --location https://github.com/forensicanalysis/artifacts/archive/v0.6.4.zip \
     && unzip artifacts.zip \
     && mkdir /artifacts \
-    && mv -fv artifacts-0.6.1/*.yaml /artifacts/
-
-COPY artifacts.yaml /artifacts/artifacts.yaml
-COPY for500.yaml /artifacts/for500.yaml
+    && mv -fv artifacts-0.6.4/*.yaml /artifacts/
 
 COPY requirements.txt .
 RUN \

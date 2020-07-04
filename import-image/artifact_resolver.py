@@ -453,11 +453,11 @@ class ArtifactResolver:
         last_write_tuple = key.last_written_time.CopyToStatTimeTuple()
         if last_write_tuple[0]:
             last_write_date = datetime.utcfromtimestamp(last_write_tuple[0])
-            last_write_date = last_write_date.replace(microsecond=(int(last_write_tuple[1] / 10)))
+            # last_write_date = last_write_date.replace(microsecond=(int(last_write_tuple[1] / 10)))
         else:
             last_write_date = datetime.utcfromtimestamp(0)
         try:
-            key_item_id = store.add_registry_key_element(artifact=artifact, modified=last_write_date,
+            key_item_id = store.add_registry_key_element(artifact=artifact, modified=last_write_date.isoformat() + 'Z',
                                                          key=key.path, errors=None)
         except TypeError as err:
             LOGGER.exception("Error adding registry key: %s", err)

@@ -34,7 +34,7 @@ def mkdata():
     tmpdir = tempfile.mkdtemp()
     tmpdir = tmpdir.replace("/var/folders", "/private/var/folders")  # Required for osx
     os.mkdir(os.path.join(tmpdir, INPUT_IMAGE_SUBDIR))
-    shutil.copyfile(os.path.join("test", "data", "win10_mock.vhd"), 
+    shutil.copyfile(os.path.join("test", "data", "win10_mock.vhd"),
                     os.path.join(tmpdir, INPUT_IMAGE_SUBDIR, "win10_mock.vhd"))
     return tmpdir
 
@@ -65,16 +65,26 @@ def test_docker(tmp):
         store_path_unix: {'bind': '/elementary', 'mode': 'rw'},
         import_path_unix: {'bind': '/elementary/' + INPUT_IMAGE_SUBDIR, 'mode': 'ro'}
     }
-    out = client.containers.run(image_tag, command=["--input_file", "win10_mock.vhd"], volumes=volumes, stderr=True).decode("utf-8")
-    print(out)
+    container = client.containers.run(
+        image_tag,
+        command=["--input_file", "win10_mock.vhd"],
+        volumes=volumes,
+        detach=True,
+    )
+    result = container.wait()
+    out = container.logs()
+    container.remove()
+    print(out.decode("utf-8"))
+
+    assert result["StatusCode"] == 0
 
     # test results
     store = forensicstore.open(os.path.join(store_path, "input.forensicstore"))
     items = list(store.all())
     store.close()
 
-    shutil.copyfile(os.path.join(store_path, "input.forensicstore"), "./input.forensicstore")
-    # assert len(items) == 8
+    # shutil.copyfile(os.path.join(store_path, "input.forensicstore"), "./input.forensicstore")
+    assert len(items) == 1832
 
     # cleanup
     try:

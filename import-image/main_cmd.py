@@ -105,8 +105,7 @@ def parse_args():
 
         # if no entry artifacts are given, use the default
         if not my_args.artifact_names:
-            my_args.artifact_names = 'DefaultEntryPoint'
-
+            my_args.artifact_names = 'DefaultCollection1'
 
     # take care of comma-separated input values
     all_inputs = []
@@ -146,7 +145,7 @@ class ArtifactExtractionCommand:
                 LOGGER.error("Could not open key file: %s", err.strerror)
 
         extractor = None
-        
+
         store_file = self.args.output_store
         print("Using output forensicstore:", store_file)
         store = forensicstore.open(store_file)
