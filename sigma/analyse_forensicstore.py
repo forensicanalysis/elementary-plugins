@@ -103,7 +103,6 @@ class ForensicstoreSigma:
             pass
 
     def generateSqlQuery(self, sigma_io):
-
         try:
             # Check if sigma_io can be parsed
             parser = SigmaCollectionParser(sigma_io, self.config, None)
@@ -126,18 +125,20 @@ class ForensicstoreSigma:
         with open(path) as sigma_io:
             queries = self.generateSqlQuery(sigma_io)
             for query, rule in queries:
+                if rule.get('logsource', {}).get('product', '').lower() != "windows":
+                    continue
                 result = self.store.query(query)
                 for element in result:
                     dic = {"name": rule["title"],
                            "subtype": "sigma",
                            "level": rule["level"],
+                           "rule": rule,
                            "type": "alert"}
-                    if "System" in element and "TimeCreated" in element["System"] and "SystemTime" in element["System"][
-                        "TimeCreated"]:
+                    if "SystemTime" in element.get("System", {}).get("TimeCreated", {}):
                         t = datetime.fromtimestamp(int(element["System"]["TimeCreated"]["SystemTime"]))
-                        element["time"] = t.isoformat()
+                        dic["time"] = t.isoformat()
                     if "agg" not in element:
-                        element["item_ref"] = element["id"]
+                        dic["item_ref"] = element["id"]
                     dic["event"] = element
                     print(json.dumps(dic))
             return True
@@ -186,12 +187,12 @@ def main():
         "name",
         "level",
         "time",
-        "System.Computer",
-        "System.EventRecordID",
-        "System.EventID.Value",
-        "System.Level",
-        "System.Channel",
-        "System.Provider.Name",
+        "event.System.Computer",
+        "event.System.EventRecordID",
+        "event.System.EventID.Value",
+        "event.System.Level",
+        "event.System.Channel",
+        "event.System.Provider.Name",
     ]
     print(json.dumps({"header": header}))
 
