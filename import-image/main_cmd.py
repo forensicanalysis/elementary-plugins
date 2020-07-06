@@ -40,7 +40,7 @@ def parse_args():
     )
     parser.add_argument(
         "-a",
-        "--artifacts_dir",
+        "--artifacts-dir",
         default='artifacts',
         dest="artifacts_path",
         help="Path where to search for artifact definitions"
@@ -65,13 +65,13 @@ def parse_args():
     )
     parser.add_argument(
         "-i",
-        "--input_file",
+        "--input-file",
         nargs='+',
         dest="input_evidence",
         help="Input file(s) (or folders) to process"
     )
     parser.add_argument(
-        "--input_dir",
+        "--input-dir",
         dest="input_evidence_dir",
         help="Input folder root path. If given, --input_file is relative to this"
     )
