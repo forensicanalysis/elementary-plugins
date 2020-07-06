@@ -67,7 +67,7 @@ def test_docker(tmp):
     }
     container = client.containers.run(
         image_tag,
-        command=["--input_file", "win10_mock.vhd"],
+        command=["--input-file", "win10_mock.vhd"],
         volumes=volumes,
         detach=True,
     )
