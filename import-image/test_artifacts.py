@@ -22,7 +22,7 @@ import docker
 import forensicstore
 import pytest
 
-INPUT_IMAGE_SUBDIR = "input_dir"
+INPUT_IMAGE_SUBDIR = "input-dir"
 
 
 @pytest.fixture
