@@ -62,7 +62,8 @@ class TestHandleFile(unittest.TestCase):
         self.analysis.store = MagicMock()
 
         sigma_rule = {"title": "Test", "level": "testing", "detection": {
-            "keywords": ["test1", "test2"], "condition": "keywords"}}
+            "keywords": ["test1", "test2"], "condition": "keywords",
+            "logsource": {"product": "windows"}}}
         generate_query_return = [("This is a sql query", sigma_rule)]
 
         with patch("os.path.exists", return_value=True):
