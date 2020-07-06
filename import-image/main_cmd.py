@@ -73,7 +73,7 @@ def parse_args():
     parser.add_argument(
         "--input-dir",
         dest="input_evidence_dir",
-        help="Input folder root path. If given, --input_file is relative to this"
+        help="Input folder root path. If given, --input-file is relative to this"
     )
     parser.add_argument('-v', '--verbose', action='count', default=0)
     my_args, _ = parser.parse_known_args(sys.argv[1:])
@@ -82,7 +82,7 @@ def parse_args():
     # are hard-coded
     if os.path.exists('/elementary'):
         # input is always mounted
-        my_args.input_evidence_dir = '/elementary/input_dir'
+        my_args.input_evidence_dir = '/elementary/input-dir'
 
         # if there's a keyfile supplied, it should be relative to input
         if my_args.keyfile:
@@ -98,8 +98,8 @@ def parse_args():
 
         # if artifacts are mounted, use those
         # else, use the built-in artifacts
-        if os.path.isdir('/elementary/artifacts_dir'):
-            my_args.artifacts_path = '/elementary/artifacts_dir'
+        if os.path.isdir('/elementary/artifacts-dir'):
+            my_args.artifacts_path = '/elementary/artifacts-dir'
         else:
             my_args.artifacts_path = '/artifacts'
 
