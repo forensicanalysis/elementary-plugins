@@ -473,15 +473,14 @@ class ArtifactResolver:
             if type_str == 'REG_DWORD_LE':
                 type_str = 'REG_DWORD'
             # TODO: Check if this is correctly handled by the library now
-            # if value.data and (value.DataIsBinaryData() or value.data_type_string == "REG_NONE"):
-            #     data = value.data
+            data = b""
+            if value.data: # and (value.DataIsBinaryData() or value.data_type_string == "REG_NONE"):
+                data = value.data
             # elif value.data:
             #     data = '{}'.format(value.GetDataAsObject())
-            # else:
-            #     data = b""
 
             try:
-                store.add_registry_value_element(key_item_id, type_str, value.data, name)
+                store.add_registry_value_element(key_item_id, type_str, data, name)
             except sqlite3.OperationalError:
                 LOGGER.exception("Error updating value")
                 continue
