@@ -562,8 +562,13 @@ class ArtifactResolver:
                 tail = '\\'.join(keyparts)
                 tail_idx = i + 1
 
-            reg_key = registry.GetKeyByPath(tail)
-            if not reg_key:
+            try:
+                reg_key = registry.GetKeyByPath(tail)
+            except RuntimeError:
+                LOGGER.debug("No matching key found for %s", tail)
+                return
+
+            if reg_key is None:
                 return
 
             for result in self._glob_registry_path_rec(keyparts, tail_idx, reg_key):
