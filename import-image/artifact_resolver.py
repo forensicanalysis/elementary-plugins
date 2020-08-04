@@ -70,13 +70,10 @@ class ArtifactResolver:
     def __init__(self, partinfo: PartitionInfo, artifacts_registry: Registry, system: OperatingSystemBase = None):
         """
         Initializes the class and loads artifacts
-        :param dfvfs: [DFVFSHelper]: DFVFSHelper-object to access data
-        :param partition: [PathSpec]: A DFVFS-PathSpec object identifying the root of the
-                system partition
-        :param partition_name: Name of the current partition
-        :param artifacts_registry: [Registry]: Database of forensic artifacts definitions
-        :param system: [OperatingSystemBase]: optional reference to a OperatingSystem-instance for
-                further variable resolving
+        :param partinfo: The partition to analyze
+        :param artifacts_registry: Database of forensic artifacts definitions
+        :param system: optional reference to a OperatingSystem-instance for
+                       further variable resolving
         """
         # pylint: disable=invalid-name,too-many-instance-attributes,too-many-arguments
         self.dfvfs = partinfo.helper
@@ -474,7 +471,7 @@ class ArtifactResolver:
                 type_str = 'REG_DWORD'
             # TODO: Check if this is correctly handled by the library now
             data = b""
-            if value.data: # and (value.DataIsBinaryData() or value.data_type_string == "REG_NONE"):
+            if value.data:  # and (value.DataIsBinaryData() or value.data_type_string == "REG_NONE"):
                 data = value.data
             # elif value.data:
             #     data = '{}'.format(value.GetDataAsObject())
@@ -532,8 +529,8 @@ class ArtifactResolver:
         This will glob a registry path with one ore more wildcards to all the registry keys that
         match.
         This is mostly used to extract artifacts, but can also be called externally.
+        :param registry_key: A registry key (string format), possibly including wildcards
         :param ignore_trailing_wildcard: Skip the last '*' if it is at the very end
-        :param key
         """
         paths_to_find = self.resolve_superglobs([registry_key], separator='\\')
 
