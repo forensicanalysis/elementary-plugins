@@ -138,53 +138,12 @@ class WindowsSystem(OperatingSystemBase):
         self._reg_reader = RegistryFileOpener(self.dfvfs, self.partition, self)
         self._registry = dfwinreg_reg.WinRegistry(registry_file_reader=self._reg_reader)
         self._read_users()  # get user accounts from registry
-        self._patch_dfwinreg()  # patch user SIDs into registry library TODO: Use dfwinreg native when bugs are fixed
 
     def get_os_name(self):
         return 'Windows'
 
     def get_registry(self):
         return self._registry
-
-    def _patch_dfwinreg(self):
-        """
-        Patches the user SIDs into the registry library so paths in
-        HKEY_USERS\\<SID>\\... in the artifacts can be mapped to the right NTUSER.DAT
-        """
-        # pylint: disable=protected-access
-        mappings_users = []
-        mappings_global = dfwinreg_reg.WinRegistry._REGISTRY_FILE_MAPPINGS_NT[:]
-        for sid in self.users:
-            base_reg_path = 'HKEY_USERS\\' + sid
-            userprofile = self.users[sid]["userprofile"]
-            mappings = {
-                base_reg_path + '\\Software\\Classes': os.path.join(userprofile, 'Local Settings',
-                                                                    'Application Data',
-                                                                    'Microsoft', 'Windows',
-                                                                    'UsrClass.dat'),
-                base_reg_path + '\\Software\\Classes': os.path.join(userprofile, 'AppData', 'Local',
-                                                                    'Microsoft',
-                                                                    'Windows', 'UsrClass.dat'),
-                base_reg_path: os.path.join(userprofile, 'NTUSER.DAT')
-            }
-
-            for key in mappings:
-                check = self.dfvfs.find_paths([mappings[key]])
-                if check:
-                    mapping = dfwinreg_reg.WinRegistryFileMapping(key, mappings[key], [''])
-                    mappings_users.append(mapping)
-        # While we are at it, remove mappings for CURRENT_USER as they don't make sense for analysis
-        for mapping in dfwinreg_reg.WinRegistry._REGISTRY_FILE_MAPPINGS_NT:
-            if mapping.key_path_prefix.startswith('HKEY_CURRENT'):
-                mappings_global.remove(mapping)
-        # monkey-patch this in the library
-        dfwinreg_reg.WinRegistry._REGISTRY_FILE_MAPPINGS_NT = mappings_global
-        dfwinreg_reg.WinRegistry._REGISTRY_FILE_MAPPINGS_NT.extend(mappings_users)
-        # this seems to cause problems - skip it for now
-        # TODO: Find out why patching this causes building the "virtual root key" to fail
-        # dfwinreg_reg.WinRegistry._MAPPED_KEYS = frozenset([
-        #        mapping.key_path_prefix for mapping in
-        #           dfwinreg_reg.WinRegistry._REGISTRY_FILE_MAPPINGS_NT])
 
     def set_var(self, key, value):
         """
