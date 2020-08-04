@@ -4,6 +4,3 @@ dfwinreg==20200415
 pyartifacts>=0.12.5,<0.13.0
 six
 unicodecsv
-
-# for debugging only
-pudb
