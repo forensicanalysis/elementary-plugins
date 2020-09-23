@@ -1,6 +1,6 @@
 dataclasses;python_version<"3.7"
-forensicstore>=0.17.0,<0.18.1
+forensicstore==0.18.0
 dfwinreg==20200415
-pyartifacts>=0.12.5,<0.13.0
+pyartifacts==0.12.5
 six
 unicodecsv
