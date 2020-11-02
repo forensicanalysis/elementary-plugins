@@ -13,7 +13,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     steps:
-      - uses: actions/setup-python@v1
+      - uses: actions/setup-python@v2
         with: {python-version: '3.8'}
       - run: pip install pylint pytest pytest-cov
       - name: Checkout code
