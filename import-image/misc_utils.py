@@ -23,6 +23,7 @@ import os.path
 from collections.abc import MutableSet
 from datetime import datetime
 
+from dfvfs.lib.errors import *
 import dfvfs_helper
 import six
 
@@ -89,7 +90,11 @@ def get_file_infos(path_spec):
     """
 
     file_entry = dfvfs_helper.pathspec_to_fileentry(path_spec)
-    stat = file_entry.GetStat()
+    stat = None
+    try:
+        stat = file_entry.GetStat()
+    except (AccessError, IOError, OSError, PathSpecError, ValueError) as err:
+        LOGGER.error("Error stat'ing %s: %s", path_spec.location, err)
     if not stat:
         LOGGER.warning("Could not get stat object for %s", file_entry.name)
 

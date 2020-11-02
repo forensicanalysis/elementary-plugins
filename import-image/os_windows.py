@@ -180,7 +180,7 @@ class WindowsSystem(OperatingSystemBase):
             LOGGER.error("Could not get SOFTWARE key for ProfileList")
             return
         for subkey in registry_key.GetSubkeys():
-            user = {}
+            user = ''
             sid = subkey.name
             profilepath = ''
             for val in subkey.GetValues():
@@ -193,7 +193,7 @@ class WindowsSystem(OperatingSystemBase):
             # strip (optional) drive letter and normalize path separator
             # note: ProfileImagePath can be 'C:\Users\Someone' OR '%Systemroot%\Something'
             rel_profilepath = profilepath.replace('\\', '/')
-            if profilepath[1] == ':':
+            if ':' in profilepath and profilepath[1] == ':':
                 rel_profilepath = rel_profilepath[2:]
             self.users[sid] = {
                 "sid": sid,
