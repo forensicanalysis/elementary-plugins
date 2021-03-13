@@ -25,6 +25,7 @@ from sigma.backends.sqlite import SQLiteBackend
 
 
 class ForensicStoreBackend(SQLiteBackend):
+    valueExpression = "%s"
     # Expression of queries for null values or non-existing fields. %s is field name
     nullExpression = "-json_extract(json, '$.%s')=*"
     # Expression of queries for not null values. %s is field name
@@ -86,3 +87,8 @@ class ForensicStoreBackend(SQLiteBackend):
             return self.orToken.join(filtered)
         else:
             return None
+
+    def generateValueNode(self, node):
+        if isinstance(node, str):
+            return "\"%s\"" % (self.cleanValue(str(node)))
+        return self.valueExpression % (self.cleanValue(str(node)))

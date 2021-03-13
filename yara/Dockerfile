@@ -61,7 +61,7 @@ LABEL short="Process files with yara"
 LABEL parameter='\
 {\
     "properties":{\
-        "rules":{"type":"string","description":"Input yara rules directory"}\
+        "rules":{"type":"string","description":"Input yara rules directory","ispath":true}\
     }\
 }'
 LABEL header="file,rule"

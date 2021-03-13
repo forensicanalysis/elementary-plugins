@@ -19,7 +19,6 @@
 #
 # Author(s): Jonas Hagg
 
-import argparse
 import json
 import logging
 import os
@@ -28,10 +27,11 @@ from datetime import datetime
 from sqlite3 import OperationalError
 
 import forensicstore
-from forensicstore_backend import ForensicStoreBackend
 from sigma.configuration import SigmaConfiguration
 from sigma.parser.collection import SigmaCollectionParser
 from sigma.parser.exceptions import SigmaParseError
+
+from forensicstore_backend import ForensicStoreBackend
 
 
 class bcolors:
@@ -148,6 +148,8 @@ class ForensicstoreSigma:
 
         for root, _, files in os.walk(path):
             for name in files:
+                info(name)  # TODO
+                print(name)  # TODO
                 statistics.totalFiles += 1
                 sigmafile = os.path.join(root, name)
                 try:
@@ -183,25 +185,10 @@ class ForensicstoreSigma:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Process forensic images and extract artifacts")
-    parser.add_argument('--debug', dest='debug', action='store_true', default=False)
-    args, _ = parser.parse_known_args(sys.argv[1:])
-    if not args.debug:
-        logging.getLogger().disabled = True
-    else:
-        logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+    logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
     analysis = ForensicstoreSigma("/input/input.forensicstore", "/app/config.yaml")
     statistics = analysis.analyseStore("/input/rules")
-
-    # sum = 0
-    # lis = sorted(statistics.errors.values(),
-    #              key=lambda item: item.count, reverse=True)
-    # for k in lis:
-    #     print(str(k.message) + ": " + str(k.count) +
-    #           "\n\t({})".format(k.files[0]))
-    #     sum += k.count
-    # print(sum)
 
     info("Handled %s of %s files successfully.", statistics.successFiles, statistics.totalFiles)
 
