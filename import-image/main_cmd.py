@@ -22,10 +22,11 @@ import logging
 import os
 import sys
 
-from pyartifacts import Registry
-from dfvfs_helper import encryption_handlers
-from artifact_collector import ArtifactExtractor
 import forensicstore
+from pyartifacts import Registry
+
+from artifact_collector import ArtifactExtractor
+from dfvfs_helper import encryption_handlers
 
 LOGGER = logging.getLogger(__name__)
 
@@ -80,9 +81,9 @@ def parse_args():
 
     # if we are running as an elementary worker, some paths
     # are hard-coded
-    if os.path.exists('/elementary'):
+    if os.path.exists('/input'):
         # input is always mounted
-        my_args.input_evidence_dir = '/elementary/input-dir'
+        my_args.input_evidence_dir = '/input/input-dir'
 
         # if there's a keyfile supplied, it should be relative to input
         if my_args.keyfile:
@@ -90,7 +91,7 @@ def parse_args():
                                            my_args.keyfile)
 
         # output is also fixed
-        options = ('/elementary/input.forensicstore', '/elementary/input')
+        options = ('/input/input.forensicstore', '/input/input')
         for o in options:
             if os.path.exists(o):
                 my_args.output_store = o
@@ -98,8 +99,8 @@ def parse_args():
 
         # if artifacts are mounted, use those
         # else, use the built-in artifacts
-        if os.path.isdir('/elementary/artifacts-dir'):
-            my_args.artifacts_path = '/elementary/artifacts-dir'
+        if os.path.isdir('/input/artifacts-dir'):
+            my_args.artifacts_path = '/input/artifacts-dir'
         else:
             my_args.artifacts_path = '/artifacts'
 
@@ -174,7 +175,7 @@ def cmd_mode(args):
             print(f"Input does not exist: {infile}")
             sys.exit(1)
     levels = [logging.WARNING, logging.INFO, logging.DEBUG]
-    level = levels[min(len(levels)-1, args.verbose)]
+    level = levels[min(len(levels) - 1, args.verbose)]
     logging.basicConfig(format="[%(asctime)s] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=level)
     logging.getLogger('dfvfs_helper.dfvfs_helper').setLevel(logging.ERROR)
     extractor = ArtifactExtractionCommand(args)
@@ -182,5 +183,7 @@ def cmd_mode(args):
 
 
 if __name__ == '__main__':
+    if os.path.exists("/input/forensicstore"):
+        os.symlink("/input/forensicstore", "/input/input.forensicstore")
     a = parse_args()
     cmd_mode(a)

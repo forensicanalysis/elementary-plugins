@@ -43,4 +43,17 @@ RUN \
 COPY . /app
 ENTRYPOINT ["python3", "/app/main_cmd.py"]
 
-LABEL short="Import images" mounts="input-dir,artifacts-dir" properties="di|im" arguments='{"properties": {"artifacts-dir": {"type": "string","description": "Directory with artifact definitions"},"input-dir": {"type": "string","description": "Directory containing input image data"},"input-file": {"type": "string","description": "Filename of input image (relative to input-dir)"},"artifact": {"type": "string","description": "Artifact(s) to extract, comma-separated"}, "partition-zips": {"type": "boolean", "description": "Process multiple zip archives as if they were partitions"}, "verbose": {"type": "boolean", "description": "Enable verbose logging"}, "keyfile": {"type": "string", "description": "Filename of decryption keys to use (relative to input-dir)"}}, "required": ["input-dir", "input-file"]}'
+LABEL short="Import images"
+LABEL parameter='\
+{\
+    "properties": {\
+        "artifacts-dir": {"type": "string","description": "Directory with artifact definitions"},\
+        "input-dir": {"type": "string","description": "Directory containing input image data"},\
+        "input-file": {"type": "string","description": "Filename of input image (relative to input-dir)"},\
+        "artifact": {"type": "string","description": "Artifact(s) to extract, comma-separated"},\
+        "partition-zips": {"type": "boolean", "description": "Process multiple zip archives as if they were partitions"},\
+        "verbose": {"type": "boolean", "description": "Enable verbose logging"},\
+        "keyfile": {"type": "string", "description": "Filename of decryption keys to use (relative to input-dir)"}\
+    },\
+    "required": ["input-dir", "input-file"]\
+}'

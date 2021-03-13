@@ -52,7 +52,7 @@ def main():
     if args.filter is None:
         args.filter = [{"type": "file"}]
 
-    store = forensicstore.open("/elementary/input.forensicstore")
+    store = forensicstore.open("/input/input.forensicstore")
     files = []
 
     tmpdir = tempfile.mkdtemp()
@@ -77,8 +77,9 @@ def main():
 
     subprocess.run(
         ["psort.py", "--status_view", "none", "-o", "forensicstore",
-         "-w", "/elementary/input.forensicstore", "Plaso/events.plaso"], check=True)
+         "-w", "/input/input.forensicstore", "Plaso/events.plaso"], check=True)
 
 
 if __name__ == '__main__':
+    os.symlink("/input/forensicstore", "/input/input.forensicstore")
     main()

@@ -28,9 +28,8 @@ def main(rules_dir):
         if rule.endswith(".yar") or rule.endswith(".yara"):
             paths[rule] = os.path.join(rules_dir, rule)
     rules = yara.compile(filepaths=paths)
-    store = forensicstore.open("/elementary/input.forensicstore")
+    store = forensicstore.open("/input/input.forensicstore")
 
-    print(json.dumps({"header": ["file", "rule"]}))
     for path in store.fs.walk.files():
         with store.fs.open(path, mode='rb') as io:
             data = io.read()
@@ -40,10 +39,11 @@ def main(rules_dir):
 
 
 if __name__ == '__main__':
-    if not os.path.exists("/elementary/input.forensicstore"):
+    os.symlink("/input/forensicstore", "/input/input.forensicstore")
+    if not os.path.exists("/input/input.forensicstore"):
         print("no forensicstore given")
         sys.exit(1)
-    if os.path.exists("/elementary/rules"):
-        main("/elementary/rules")
+    if os.path.exists("/input/rules"):
+        main("/input/rules")
     else:
         main("/default_rules")

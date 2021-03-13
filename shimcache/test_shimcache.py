@@ -44,7 +44,7 @@ def test_shimcache(data):
 
     shimcache.main(os.path.join(data, "input.forensicstore"))
 
-    assert temp_out.getvalue().count("\n") == 391 + 1
+    assert temp_out.getvalue().count("\n") == 391
 
     sys.stdout = sys.__stdout__
     os.chdir(cwd)

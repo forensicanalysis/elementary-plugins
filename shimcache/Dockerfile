@@ -26,3 +26,4 @@ WORKDIR /store
 ENTRYPOINT ["python", "/shimcache.py"]
 
 LABEL short="Process the shimcache"
+LABEL header="Binary Last Modified,Path"
