@@ -33,4 +33,4 @@ WORKDIR /store
 ENTRYPOINT ["python3", "/entry.py"]
 # ENTRYPOINT ["/bin/sh", "-c", "mkdir -p Plaso && log2timeline.py --status_view none --logfile test.log Plaso/events.plaso /store/WindowsDeviceSetup && psort.py --status_view none -o forensicstore -w /store/ Plaso/events.plaso"]
 
-LABEL short="Process with plaso" properties="di"
+LABEL short="Process with plaso"

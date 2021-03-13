@@ -81,4 +81,5 @@ def main():
 
 
 if __name__ == '__main__':
+    os.symlink("forensicstore", "input.forensicstore")
     main()

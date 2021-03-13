@@ -183,19 +183,6 @@ class ForensicstoreSigma:
 
 
 def main():
-    header = [
-        "name",
-        "level",
-        "time",
-        "event.System.Computer",
-        "event.System.EventRecordID",
-        "event.System.EventID.Value",
-        "event.System.Level",
-        "event.System.Channel",
-        "event.System.Provider.Name",
-    ]
-    print(json.dumps({"header": header}))
-
     parser = argparse.ArgumentParser(description="Process forensic images and extract artifacts")
     parser.add_argument('--debug', dest='debug', action='store_true', default=False)
     args, _ = parser.parse_known_args(sys.argv[1:])
@@ -220,4 +207,5 @@ def main():
 
 
 if __name__ == '__main__':
+    os.symlink("forensicstore", "input.forensicstore")
     main()

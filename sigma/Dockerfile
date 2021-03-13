@@ -37,4 +37,11 @@ RUN chmod +x /app/analyse_forensicstore.py
 WORKDIR /store
 ENTRYPOINT ["python", "/app/analyse_forensicstore.py"]
 
-LABEL short="Process eventlogs with sigma" mounts="rules" arguments='{"properties":{"rules":{"type":"string","description":"Input yara rules directory"}}}'
+LABEL short="Process eventlogs with sigma"
+LABEL parameter='\
+{\
+    "properties": {\
+        "rules":{"type":"string","description":"Input yara rules directory"}\
+    }\
+}'
+LABEL header="name,level,time,event.System.Computer,event.System.EventRecordID,event.System.EventID.Value,event.System.Level,event.System.Channel,event.System.Provider.Name"

@@ -34,11 +34,8 @@ import json
 import logging
 import os
 import struct
-import sys
-import time
 from base64 import b64decode
 
-import argparse
 import forensicstore
 
 LOGGER = logging.getLogger(__name__)
@@ -88,7 +85,6 @@ def transform(obj):
 
 
 def main(url):
-    print(json.dumps({"header": ["Binary Last Modified", "Path"]}))
     store = forensicstore.open(url)
     conditions = [{
         'key':
@@ -628,4 +624,5 @@ def read_winxp_entries(bin_data):
 
 
 if __name__ == '__main__':
+    os.symlink("forensicstore", "input.forensicstore")
     main("input.forensicstore")

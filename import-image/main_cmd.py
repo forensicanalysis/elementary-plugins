@@ -182,5 +182,6 @@ def cmd_mode(args):
 
 
 if __name__ == '__main__':
+    os.symlink("forensicstore", "input.forensicstore")
     a = parse_args()
     cmd_mode(a)

@@ -30,7 +30,6 @@ def main(rules_dir):
     rules = yara.compile(filepaths=paths)
     store = forensicstore.open("/elementary/input.forensicstore")
 
-    print(json.dumps({"header": ["file", "rule"]}))
     for path in store.fs.walk.files():
         with store.fs.open(path, mode='rb') as io:
             data = io.read()
