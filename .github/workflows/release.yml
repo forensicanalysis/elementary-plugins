@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        plugin: [ 'import-image', 'plaso', 'shimcache', 'yara', 'sigma' ]
+        plugin: [ 'plaso', 'shimcache', 'yara', 'sigma' ]
     steps:
       - uses: actions/checkout@v2
       - uses: docker/build-push-action@v1

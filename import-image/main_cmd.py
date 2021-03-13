@@ -22,10 +22,11 @@ import logging
 import os
 import sys
 
-from pyartifacts import Registry
-from dfvfs_helper import encryption_handlers
-from artifact_collector import ArtifactExtractor
 import forensicstore
+from pyartifacts import Registry
+
+from artifact_collector import ArtifactExtractor
+from dfvfs_helper import encryption_handlers
 
 LOGGER = logging.getLogger(__name__)
 
@@ -174,7 +175,7 @@ def cmd_mode(args):
             print(f"Input does not exist: {infile}")
             sys.exit(1)
     levels = [logging.WARNING, logging.INFO, logging.DEBUG]
-    level = levels[min(len(levels)-1, args.verbose)]
+    level = levels[min(len(levels) - 1, args.verbose)]
     logging.basicConfig(format="[%(asctime)s] %(message)s", datefmt='%Y-%m-%d %H:%M:%S', level=level)
     logging.getLogger('dfvfs_helper.dfvfs_helper').setLevel(logging.ERROR)
     extractor = ArtifactExtractionCommand(args)
@@ -182,6 +183,7 @@ def cmd_mode(args):
 
 
 if __name__ == '__main__':
-    os.symlink("/input/forensicstore", "/input/input.forensicstore")
+    if os.path.exists("/input/forensicstore"):
+        os.symlink("/input/forensicstore", "/input/input.forensicstore")
     a = parse_args()
     cmd_mode(a)
