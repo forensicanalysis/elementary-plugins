@@ -55,7 +55,6 @@ RUN rm -f /default_rules/yara_mixed_ext_vars.yar
 ADD yara_plugin.py /yara_plugin.py
 RUN chmod +x /yara_plugin.py
 
-WORKDIR /store
 ENTRYPOINT ["python3", "/yara_plugin.py"]
 
 LABEL short="Process files with yara"

@@ -34,7 +34,6 @@ RUN mv /sigma-0.17.0/rules/* /elementary/rules
 
 RUN chmod +x /app/analyse_forensicstore.py
 
-WORKDIR /store
 ENTRYPOINT ["python", "/app/analyse_forensicstore.py"]
 
 LABEL short="Process eventlogs with sigma"

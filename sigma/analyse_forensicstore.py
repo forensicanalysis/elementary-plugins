@@ -191,8 +191,8 @@ def main():
     else:
         logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
-    analysis = ForensicstoreSigma("/elementary/input.forensicstore", "/app/config.yaml")
-    statistics = analysis.analyseStore("/elementary/rules")
+    analysis = ForensicstoreSigma("/input/input.forensicstore", "/app/config.yaml")
+    statistics = analysis.analyseStore("/input/rules")
 
     # sum = 0
     # lis = sorted(statistics.errors.values(),
@@ -207,5 +207,5 @@ def main():
 
 
 if __name__ == '__main__':
-    os.symlink("forensicstore", "input.forensicstore")
+    os.symlink("/input/forensicstore", "/input/input.forensicstore")
     main()

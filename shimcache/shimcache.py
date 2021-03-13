@@ -543,7 +543,7 @@ def read_nt6_entries(bin_data, entry):
             path = path.replace("\\??\\", "")
 
             # Test to see if the file may have been executed.
-            if (entry.FileFlags & CSRSS_FLAG):
+            if entry.FileFlags & CSRSS_FLAG:
                 exec_flag = 'True'
             else:
                 exec_flag = 'False'
@@ -624,5 +624,5 @@ def read_winxp_entries(bin_data):
 
 
 if __name__ == '__main__':
-    os.symlink("forensicstore", "input.forensicstore")
+    os.symlink("/input/forensicstore", "/input/input.forensicstore")
     main("input.forensicstore")
