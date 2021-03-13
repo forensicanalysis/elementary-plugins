@@ -89,6 +89,9 @@ class ForensicStoreBackend(SQLiteBackend):
             return None
 
     def generateValueNode(self, node):
-        if isinstance(node, str):
-            return "\"%s\"" % (self.cleanValue(str(node)))
-        return self.valueExpression % (self.cleanValue(str(node)))
+        if self.mappingItem:
+            if isinstance(node, str):
+                return "\"%s\"" % (self.cleanValue(str(node)))
+            return self.valueExpression % (self.cleanValue(str(node)))
+        else:
+            return self.generateFTS(self.cleanValue(str(node)))

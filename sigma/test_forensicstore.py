@@ -45,7 +45,7 @@ class TestFullTextSearch(unittest.TestCase):
         detection = {"selection": {"fieldname": 4}, "condition": "selection"}
         expected_result = 'SELECT json FROM {} ' \
                           'WHERE json_extract(json, \'$.type\') = \'eventlog\' ' \
-                          'AND json_extract(json, \'$.fieldname\') = "4"'.format(self.table)
+                          'AND json_extract(json, \'$.fieldname\') = 4'.format(self.table)
         self.validate(detection, expected_result)
 
         detection = {"selection": {"fieldname": ["test1", "test2"]}, "condition": "selection"}
@@ -57,7 +57,7 @@ class TestFullTextSearch(unittest.TestCase):
         detection = {"selection": {"fieldname": [3, 4]}, "condition": "selection"}
         expected_result = 'SELECT json FROM {} ' \
                           'WHERE json_extract(json, \'$.type\') = \'eventlog\' ' \
-                          'AND json_extract(json, \'$.fieldname\') IN ("3", "4")'.format(self.table)
+                          'AND json_extract(json, \'$.fieldname\') IN (3, 4)'.format(self.table)
         self.validate(detection, expected_result)
 
         detection = {"selection": {"fieldname1": "test1", "fieldname2": [
