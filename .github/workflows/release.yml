@@ -14,7 +14,7 @@ jobs:
       matrix:
         plugin: [ 'plaso', 'shimcache', 'yara', 'sigma' ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: docker/build-push-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
