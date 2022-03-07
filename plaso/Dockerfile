@@ -14,7 +14,7 @@
 #
 # Author(s): Jonas Plum
 
-FROM log2timeline/plaso:20200227
+FROM log2timeline/plaso:20211229
 
 
 RUN apt-get update && apt-get install -y python3-pip
