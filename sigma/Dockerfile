@@ -19,7 +19,7 @@
 #
 # Author(s): Jonas Plum
 
-FROM python:3.9
+FROM python:3.10
 
 ADD requirements.txt /app/requirements.txt
 RUN pip install -r /app/requirements.txt
