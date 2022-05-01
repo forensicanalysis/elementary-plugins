@@ -19,7 +19,7 @@
 #
 # Author(s): Jonas Plum, Demian Kellermann
 
-FROM log2timeline/plaso:20200717
+FROM log2timeline/plaso:20220428
 
 RUN apt-get -y update \
     && apt-get -y install curl unzip python3-distutils python3-dfvfs python3-artifacts libregf-python3 \
