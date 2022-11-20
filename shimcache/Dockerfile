@@ -14,7 +14,7 @@
 #
 # Author(s): Jonas Plum
 
-FROM python:3.10
+FROM python:3.11
 
 ADD requirements.txt /requirements.txt
 RUN pip3 install -r /requirements.txt
