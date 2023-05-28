@@ -19,7 +19,7 @@
 #
 # Author(s): Jonas Plum
 
-FROM alpine:3.15
+FROM alpine:3.18
 
 RUN apk add --no-cache python3-dev python3 py3-pip build-base
 RUN apk add --no-cache openssl file jansson bison tini su-exec
